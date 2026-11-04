@@ -1,0 +1,64 @@
+### Pruebas de la API (extensión REST Client, o copiar a Thunder Client / Postman)
+@base = http://localhost:3000/api
+
+### Salud del servidor
+GET {{base}}/health
+
+### 1. Crear categoría  -> 201
+POST {{base}}/categorias
+Content-Type: application/json
+
+{ "nombre": "Bebidas", "descripcion": "Refrescos, jugos y agua" }
+
+### 2. Listar categorías  -> 200
+GET {{base}}/categorias
+
+### 3. Ver una categoría  -> 200
+GET {{base}}/categorias/1
+
+### 4. Categoría inexistente  -> 404
+GET {{base}}/categorias/9999
+
+### 5. Validación: falta nombre y tipo incorrecto  -> 400
+POST {{base}}/categorias
+Content-Type: application/json
+
+{ "descripcion": 123 }
+
+### 6. Duplicado  -> 409
+POST {{base}}/categorias
+Content-Type: application/json
+
+{ "nombre": "Bebidas" }
+
+### 7. Actualizar categoría  -> 200
+PUT {{base}}/categorias/1
+Content-Type: application/json
+
+{ "nombre": "Bebidas y refrescos", "descripcion": "Línea de bebidas" }
+
+### 8. Crear producto (relación con categoría)  -> 201
+POST {{base}}/productos
+Content-Type: application/json
+
+{
+  "sku": "beb-001",
+  "nombre": "Agua 600 ml",
+  "precioCosto": 250,
+  "precioVenta": 450,
+  "stockActual": 120,
+  "stockMinimo": 24,
+  "categoriaId": 1
+}
+
+### 9. Listar productos (incluye categoría y proveedor)  -> 200
+GET {{base}}/productos
+
+### 10. Producto con precio negativo y categoría inexistente  -> 400
+POST {{base}}/productos
+Content-Type: application/json
+
+{ "sku": "X-1", "nombre": "Malo", "precioCosto": -5, "precioVenta": "100", "categoriaId": 999 }
+
+### 11. Borrar categoría con productos  -> 409
+DELETE {{base}}/categorias/1
