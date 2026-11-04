@@ -20,11 +20,24 @@ Este proyecto **no** incluye autenticación, login, registro ni roles. El foco s
 - Node.js 20 o superior
 - MySQL 8
 
-## Puesta en marcha
+## Puesta en marcha rápida
 
-Abre dos terminales, una para el backend y otra para el frontend.
+Desde la raíz del proyecto:
 
-**1. Backend** (http://localhost:3000/api)
+```bash
+npm run instalar            # instala raíz, backend y frontend
+cp backend/.env.example backend/.env   # completa DB_USER y DB_PASSWORD
+npm run db:setup            # crea la base, las tablas y los datos de ejemplo
+npm run dev                 # levanta backend y frontend juntos
+```
+
+Abre http://localhost:5173. Si ves "No se pudo conectar con el servidor", el backend no está corriendo: revisa en la terminal las líneas `[api]`.
+
+## Puesta en marcha por separado
+
+Si prefieres dos terminales, una para el backend y otra para el frontend:
+
+**1. Backend** (http://localhost:3000/api; el puerto se cambia con `API_PORT` en `.env`)
 
 ```bash
 cd backend
