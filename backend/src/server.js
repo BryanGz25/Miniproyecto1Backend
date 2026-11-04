@@ -3,7 +3,8 @@ require('dotenv').config();
 const app = require('./app');
 const { sequelize } = require('./models');
 
-const PORT = Number(process.env.PORT) || 3000;
+// API_PORT (y no PORT) porque otras herramientas suelen definir PORT para sí mismas.
+const PORT = Number(process.env.API_PORT) || 3000;
 
 const iniciar = async () => {
   try {
