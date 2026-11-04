@@ -152,6 +152,10 @@ textarea {
   .nav {
     flex-direction: row;
     overflow-x: auto;
+    scrollbar-width: none; /* se desliza con el dedo o la rueda, sin barra visible */
+  }
+  .nav::-webkit-scrollbar {
+    display: none;
   }
   .nav a {
     white-space: nowrap;

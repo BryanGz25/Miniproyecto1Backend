@@ -28,6 +28,10 @@ export async function request(ruta, { method = 'GET', body } = {}) {
     });
     const datos = respuesta.status === 204 ? null : await respuesta.json().catch(() => null);
 
+    // Sin JSON y con 5xx: lo respondió el proxy de Vite porque el backend no está corriendo.
+    if (respuesta.status >= 500 && !datos) {
+      throw new ApiError(respuesta.status, 'No se pudo conectar con el servidor. Revisa que el backend esté corriendo.');
+    }
     if (!respuesta.ok) {
       throw new ApiError(respuesta.status, datos?.error || 'Ocurrió un error inesperado.', datos?.detalles || []);
     }
