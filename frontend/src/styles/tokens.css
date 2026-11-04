@@ -1,0 +1,34 @@
+/* Tokens de diseño: colores, vidrio, tipografía y espaciado. */
+:root {
+  color-scheme: dark; /* calendario, listas y barras nativas en modo oscuro */
+  --fondo: #0b0e24;
+  --mancha-violeta: #7c4dff;
+  --mancha-celeste: #00c2ff;
+
+  --vidrio: rgba(255, 255, 255, 0.08);
+  --vidrio-fuerte: rgba(255, 255, 255, 0.14);
+  --vidrio-borde: rgba(255, 255, 255, 0.18);
+  --vidrio-borde-fuerte: rgba(255, 255, 255, 0.3);
+  --vidrio-blur: blur(18px) saturate(140%);
+  --vidrio-sin-blur: rgba(24, 28, 64, 0.92);
+
+  --texto: #ffffff;
+  --texto-2: rgba(255, 255, 255, 0.68);
+  --texto-3: rgba(255, 255, 255, 0.45);
+  --acento: #9fd8ff;
+  --degradado-acento: linear-gradient(135deg, #7c6cff, #3fb8ff);
+
+  --ok-bg: rgba(72, 220, 150, 0.18);
+  --ok: #7ff0bb;
+  --alerta-bg: rgba(255, 184, 64, 0.18);
+  --alerta: #ffd58a;
+  --peligro-bg: rgba(255, 90, 110, 0.2);
+  --peligro: #ff9fae;
+  --peligro-solido: rgba(240, 70, 100, 0.9);
+
+  --radio: 10px;
+  --radio-card: 16px;
+  --sombra: 0 8px 32px rgba(5, 8, 30, 0.35);
+  --fuente: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
