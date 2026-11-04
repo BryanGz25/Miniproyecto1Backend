@@ -21,7 +21,9 @@ const manejadorErrores = (err, _req, res, _next) => {
     return res.status(409).json({ error: `Ya existe un registro con ese valor en: ${campos}.` });
   }
   if (err instanceof ForeignKeyConstraintError) {
-    return res.status(409).json({ error: 'No se puede completar: el registro está relacionado con otros datos.' });
+    return res.status(409).json({
+      error: 'No se puede eliminar porque tiene registros asociados (productos o movimientos). Elimínalos o reasígnalos primero.',
+    });
   }
   if (err instanceof ValidationError) {
     return res.status(400).json({ error: 'Datos inválidos.', detalles: err.errors.map((e) => e.message) });
