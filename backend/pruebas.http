@@ -62,3 +62,27 @@ Content-Type: application/json
 
 ### 11. Borrar categoría con productos  -> 409
 DELETE {{base}}/categorias/1
+
+### 12. Crear proveedor  -> 201
+POST {{base}}/proveedores
+Content-Type: application/json
+
+{ "nombre": "Distribuidora Norte", "identificacion": "3-101-999999", "telefono": "+506 2666-7788", "email": "ventas@norte.cr" }
+
+### 13. Listar proveedores  -> 200
+GET {{base}}/proveedores
+
+### 14. Entrada de stock (suma al producto 1)  -> 201
+POST {{base}}/movimientos
+Content-Type: application/json
+
+{ "productoId": 1, "tipo": "ENTRADA", "cantidad": 10, "costoUnitario": 250, "motivo": "Compra factura #2001" }
+
+### 15. Salida mayor al stock disponible  -> 409
+POST {{base}}/movimientos
+Content-Type: application/json
+
+{ "productoId": 1, "tipo": "SALIDA", "cantidad": 99999 }
+
+### 16. Movimientos de un producto  -> 200
+GET {{base}}/movimientos?productoId=1
