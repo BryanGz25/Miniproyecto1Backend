@@ -25,7 +25,7 @@ const manejadorErrores = (err, _req, res, _next) => {
     const tabla = /`[^`]+`\.`([^`]+)`/.exec(err.parent?.sqlMessage || '')?.[1];
     const dependientes = tabla ? tabla.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase() : 'otros registros';
     return res.status(409).json({
-      error: `No se puede eliminar porque tiene ${dependientes} asociados. Elimínalos o reasígnalos primero.`,
+      error: `No se puede eliminar: hay registros en «${dependientes}» que dependen de este. Elimínalos o reasígnalos primero.`,
     });
   }
   if (err instanceof ValidationError) {
