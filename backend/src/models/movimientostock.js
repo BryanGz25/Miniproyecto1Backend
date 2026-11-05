@@ -6,12 +6,14 @@ module.exports = (sequelize, DataTypes) => {
   class MovimientoStock extends Model {
     static associate(models) {
       MovimientoStock.belongsTo(models.Producto, { foreignKey: 'productoId', as: 'producto' });
+      MovimientoStock.belongsTo(models.Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
     }
   }
 
   MovimientoStock.init(
     {
       productoId: { type: DataTypes.INTEGER, allowNull: false },
+      usuarioId: { type: DataTypes.INTEGER, allowNull: true },
       tipo: { type: DataTypes.ENUM('ENTRADA', 'SALIDA', 'AJUSTE'), allowNull: false },
       cantidad: { type: DataTypes.INTEGER, allowNull: false, validate: { min: 1 } },
       costoUnitario: {
