@@ -1,21 +1,29 @@
 # Sistema de Gestión de Inventarios para PYMES
 
-Mini Proyecto 1: sistema empresarial con CRUDs completos y autenticación JWT. El backend usa Node.js, Express, Sequelize y MySQL; el frontend usa React, React Router y Vite, con estilo glassmorphism.
+Mini Proyecto 1: sistema empresarial con **20 tablas relacionadas, 20 CRUDs completos** y autenticación JWT. El backend usa Node.js, Express, Sequelize y MySQL; el frontend usa React, React Router y Vite, con estilo glassmorphism.
 
-- Día 1 · justificación y modelo entidad-relación: [docs/dia1-entregable.md](docs/dia1-entregable.md)
+- Día 1 · justificación empresarial: [docs/dia1-entregable.md](docs/dia1-entregable.md)
+- **Modelo entidad-relación de las 20 tablas:** [docs/modelo-er.md](docs/modelo-er.md)
 - Día 2 · investigación sobre JWT: [docs/investigacion-jwt.md](docs/investigacion-jwt.md)
 - Colección de pruebas (Postman / Thunder Client): [docs/postman/inventario.postman_collection.json](docs/postman/inventario.postman_collection.json)
 
 ## Qué hace
 
-| Sección | Qué permite |
+Tras iniciar sesión, la administración tiene **20 CRUDs** agrupados por área. Cada uno incluye tabla con buscador, formulario en modal (las claves foráneas se eligen en listas desplegables cargadas de la API) y eliminación con confirmación.
+
+| Área | CRUDs |
 |---|---|
-| Login / Registro | Crear cuenta e iniciar sesión; sin sesión no se puede entrar a ninguna otra pantalla |
-| Resumen | Valor del inventario, productos por reponer y últimos movimientos |
-| Productos | CRUD con categoría y proveedor (listas desplegables cargadas de la API), precios y stock con alerta de mínimo |
-| Categorías | CRUD para clasificar productos (no se borra una categoría en uso) |
-| Proveedores | CRUD de proveedores (no se borra uno que abastece productos) |
-| Movimientos | Entradas, salidas y ajustes que actualizan el stock y guardan qué usuario los registró |
+| Inventario | Productos · Categorías · Marcas · Unidades de medida · Impuestos · Lotes · Movimientos de stock |
+| Bodegas | Bodegas · Ubicaciones |
+| Compras | Proveedores · Contactos de proveedor · Órdenes de compra · Detalle de órdenes |
+| Ventas | Clientes · Métodos de pago · Ventas · Detalle de ventas |
+| Personal | Departamentos · Empleados · Usuarios |
+
+Además:
+- **Resumen:** valor del inventario, productos por reponer y últimos movimientos.
+- **Movimientos** actualizan el stock en una transacción y guardan el usuario y la bodega.
+- **Órdenes de compra y ventas** quedan registradas a nombre del usuario que inició sesión.
+- **Login / Registro:** sin sesión no se puede entrar a ninguna otra pantalla.
 
 ## Requisitos
 
@@ -102,7 +110,7 @@ En desarrollo, Vite redirige `/api` al backend, así que no hay que configurar C
 
 ## API REST (requiere token)
 
-Las 4 entidades tienen los mismos 5 endpoints:
+Las 20 entidades tienen los mismos 5 endpoints:
 
 | Método | Ruta | Respuesta |
 |---|---|---|
@@ -112,11 +120,15 @@ Las 4 entidades tienen los mismos 5 endpoints:
 | PUT | `/api/<recurso>/:id` | 200 actualizado · 400 · 404 |
 | DELETE | `/api/<recurso>/:id` | 200 · 404 · 409 si tiene registros dependientes |
 
-Recursos: `categorias`, `proveedores`, `productos` y `movimientos` (este último acepta `?productoId=` para filtrar).
+Recursos: `usuarios`, `categorias`, `proveedores`, `productos`, `movimientos`, `marcas`, `unidades-medida`, `impuestos`, `bodegas`, `ubicaciones`, `lotes`, `contactos-proveedor`, `ordenes-compra`, `detalles-orden-compra`, `clientes`, `metodos-pago`, `ventas`, `detalles-venta`, `departamentos` y `empleados`.
+
+Los listados aceptan filtrar por cualquier clave foránea, por ejemplo `GET /api/ubicaciones?bodegaId=1` o `GET /api/detalles-venta?ventaId=3`.
+
+**Cómo están hechos:** las 4 entidades del Día 1 y Usuarios tienen controladores propios, porque llevan reglas especiales (stock en transacción, hash del password). Las otras 15 usan `controllers/crudFactory.js`, que arma los 5 endpoints a partir de la descripción de sus campos en `controllers/entidades.controller.js`. Así todas validan igual: obligatorios, tipos, formatos, rangos y que cada clave foránea exista.
 
 ## Probar la API
 
-**Postman o Thunder Client:** importa `docs/postman/inventario.postman_collection.json` y ejecuta la colección completa con el *Runner*. Son 43 peticiones en 8 carpetas:
+**Postman o Thunder Client:** importa `docs/postman/inventario.postman_collection.json` y ejecuta la colección completa con el *Runner*. Son **164 peticiones en 12 carpetas**, que cubren los 20 CRUDs:
 1. El **login guarda el token** automáticamente en la variable `{{token}}`.
 2. Cada "Crear" guarda su id para las peticiones siguientes.
 3. Cubre los caminos felices y las respuestas **400, 401, 404 y 409**, y al final borra lo que creó.
@@ -131,8 +143,9 @@ backend/
 └── src/
     ├── config/        database.js (MySQL) y jwt.js (secreto y expiración)
     ├── database/      migraciones y seeders
-    ├── models/        usuario.js, categoria.js, proveedor.js, producto.js, movimientostock.js
-    ├── controllers/   authController.js + CRUD de cada entidad con validaciones
+    ├── models/        20 modelos Sequelize con sus relaciones (usuario.js, producto.js, venta.js…)
+    ├── controllers/   authController.js, usuarios y Día 1 con controller propio,
+    │                  crudFactory.js + entidades.controller.js para las otras 15
     ├── routes/        authRoutes.js + rutas /api/<recurso>
     ├── middlewares/   authMiddleware.js (JWT) y errores.js
     └── app.js · server.js
@@ -140,9 +153,10 @@ backend/
 frontend/src/
 ├── context/       AuthContext.jsx (sesión global)
 ├── components/    RutaProtegida.jsx, Layout, Sidebar, tabla, modal, confirmación, formularios
-├── pages/         Login.jsx, Registro.jsx, Resumen y una página por entidad
+├── config/        entidades.js: tabla y formulario de cada vista de administración
+├── pages/         Login.jsx, Registro.jsx, Resumen, Día 1 y admin/ (una vista por entidad)
 ├── services/      api.js (fetch + token + autologout) y servicios por entidad
-├── hooks/         useCrud, useFormulario
+├── hooks/         useCrud, useFormulario, useOpciones (listas de los <select>)
 ├── styles/        tokens y estilos glass
 └── utils/         formato de colones, fechas y stock
 ```
