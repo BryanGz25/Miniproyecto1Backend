@@ -6,6 +6,12 @@ import { useAuth } from '../context/AuthContext';
 export const MENU = [
   { grupo: null, enlaces: [['/resumen', 'Resumen', 'resumen']] },
   {
+    grupo: 'Agentes IA',
+    enlaces: [
+      ['/alertas-inventario', 'Alertas de stock', 'campana'],
+    ],
+  },
+  {
     grupo: 'Inventario',
     enlaces: [
       ['/productos', 'Productos', 'caja'],

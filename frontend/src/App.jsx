@@ -10,6 +10,7 @@ import ProductosPage from './pages/ProductosPage';
 import CategoriasPage from './pages/CategoriasPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import MovimientosPage from './pages/MovimientosPage';
+import AlertasInventarioPage from './pages/AlertasInventarioPage';
 import { PAGINAS_ADMIN } from './pages/admin';
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route index element={<Navigate to="/resumen" replace />} />
                 <Route path="/resumen" element={<ResumenPage />} />
+                <Route path="/alertas-inventario" element={<AlertasInventarioPage />} />
                 <Route path="/productos" element={<ProductosPage />} />
                 <Route path="/categorias" element={<CategoriasPage />} />
                 <Route path="/proveedores" element={<ProveedoresPage />} />

@@ -40,4 +40,7 @@ router.use('/metodos-pago', require('./metodosPago.routes'));
 router.use('/ventas', require('./ventas.routes'));
 router.use('/detalles-venta', require('./detallesVenta.routes'));
 
+// Agentes Inteligentes (Alertas de Inventario por correo y Chatbot Integral)
+router.use('/agentes', require('./agentes.routes'));
+
 module.exports = router;
