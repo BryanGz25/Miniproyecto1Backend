@@ -27,6 +27,7 @@ const COLUMNAS = [
   },
   { clave: 'costoUnitario', titulo: 'Costo unit.', clase: 'derecha', render: (m) => formatearColones(m.costoUnitario) },
   { clave: 'motivo', titulo: 'Motivo', render: (m) => <span className="secundario">{m.motivo || '—'}</span> },
+  { clave: 'usuario', titulo: 'Registrado por', render: (m) => <span className="secundario">{m.usuario?.nombre ?? '—'}</span> },
 ];
 
 const BUSQUEDA = [(m) => m.producto?.nombre, (m) => m.producto?.sku, (m) => m.motivo];

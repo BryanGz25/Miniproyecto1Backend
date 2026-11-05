@@ -545,6 +545,120 @@ select.campo option {
   color: var(--peligro);
 }
 
+/* ---------- Sesión (menú lateral) ---------- */
+.sesion {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sesion-usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  min-width: 0;
+}
+.sesion-usuario > div {
+  min-width: 0;
+}
+.avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--degradado-acento);
+  font-weight: 600;
+}
+.sesion-nombre {
+  font-weight: 500;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sesion-correo {
+  font-size: 11px;
+  color: var(--texto-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sesion-salir {
+  width: 100%;
+}
+@media (max-width: 860px) {
+  .sesion {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  .sesion-salir {
+    width: auto;
+  }
+}
+
+/* ---------- Login y registro ---------- */
+.auth-pantalla {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.auth-card {
+  width: min(420px, 100%);
+  padding: 28px;
+  animation: subir 0.25s ease-out;
+}
+.auth-marca {
+  padding: 0 0 18px;
+}
+.auth-card h1 {
+  font-size: 24px;
+  font-weight: 600;
+}
+.auth-subtitulo {
+  margin: 4px 0 20px;
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-boton {
+  margin-top: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.auth-pie {
+  margin-top: 18px;
+  text-align: center;
+  color: var(--texto-2);
+  font-size: 13px;
+}
+.auth-pie a,
+.auth-card a {
+  color: var(--acento);
+  font-weight: 500;
+}
+.aviso-info {
+  background: rgba(159, 216, 255, 0.12);
+  border: 1px solid rgba(159, 216, 255, 0.35);
+  border-radius: var(--radio);
+  padding: 10px 12px;
+  color: var(--acento);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
 @keyframes aparecer {
   from {
     opacity: 0;
