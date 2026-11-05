@@ -1,4 +1,4 @@
-const { Proveedor } = require('../models');
+const { Proveedor, Producto } = require('../models');
 const { textoRequerido, textoOpcional, booleanoOpcional, parsearId } = require('../utils/validaciones');
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,10 +71,17 @@ const actualizar = async (req, res) => {
   return res.status(200).json(proveedor);
 };
 
-// DELETE /api/proveedores/:id  (sus productos quedan sin proveedor: FK SET NULL)
+// DELETE /api/proveedores/:id  (409 si todavía abastece productos)
 const eliminar = async (req, res) => {
   const proveedor = await buscarPorId(req, res);
   if (!proveedor) return;
+
+  const productos = await Producto.count({ where: { proveedorId: proveedor.id } });
+  if (productos > 0) {
+    return res.status(409).json({
+      error: `No se puede eliminar: el proveedor abastece ${productos} producto(s). Reasígnalos a otro proveedor primero.`,
+    });
+  }
 
   await proveedor.destroy();
   return res.status(200).json({ mensaje: 'Proveedor eliminado.', id: proveedor.id });
