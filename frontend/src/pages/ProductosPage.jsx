@@ -4,6 +4,7 @@ import Indicador from '../components/Indicador';
 import StockBadge from '../components/StockBadge';
 import ProductoForm from '../components/forms/ProductoForm';
 import { useCrud } from '../hooks/useCrud';
+import { useOpciones } from '../hooks/useOpciones';
 import { categoriasService, productosService, proveedoresService } from '../services/inventario.service';
 import { estadoStock, formatearColones, formatearEntero } from '../utils/formato';
 
@@ -11,17 +12,20 @@ const COLUMNAS = [
   { clave: 'sku', titulo: 'SKU', render: (p) => <span className="mono">{p.sku}</span> },
   { clave: 'nombre', titulo: 'Producto', render: (p) => <strong style={{ fontWeight: 500 }}>{p.nombre}</strong> },
   { clave: 'categoria', titulo: 'Categoría', render: (p) => p.categoria?.nombre ?? '—' },
+  { clave: 'marca', titulo: 'Marca', render: (p) => <span className="secundario">{p.marca?.nombre ?? '—'}</span> },
   { clave: 'proveedor', titulo: 'Proveedor', render: (p) => <span className="secundario">{p.proveedor?.nombre ?? '—'}</span> },
   { clave: 'stock', titulo: 'Stock', render: (p) => <StockBadge producto={p} /> },
   { clave: 'precioVenta', titulo: 'Precio', clase: 'derecha', render: (p) => formatearColones(p.precioVenta) },
 ];
 
-const BUSQUEDA = [(p) => p.nombre, (p) => p.sku];
+const BUSQUEDA = [(p) => p.nombre, (p) => p.sku, (p) => p.marca?.nombre];
+const CATALOGOS = ['marcas', 'unidades-medida', 'impuestos'];
 
 export default function ProductosPage() {
   const crud = useCrud(productosService);
   const categorias = useCrud(categoriasService);
   const proveedores = useCrud(proveedoresService);
+  const catalogos = useOpciones(CATALOGOS);
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
 
   const filtrar = useCallback((p) => !categoriaFiltro || String(p.categoriaId) === categoriaFiltro, [categoriaFiltro]);
@@ -40,7 +44,13 @@ export default function ProductosPage() {
       camposBusqueda={BUSQUEDA}
       filtrar={filtrar}
       Formulario={ProductoForm}
-      propsFormulario={{ categorias: categorias.items, proveedores: proveedores.items }}
+      propsFormulario={{
+        categorias: categorias.items,
+        proveedores: proveedores.items,
+        marcas: catalogos.marcas,
+        unidades: catalogos['unidades-medida'],
+        impuestos: catalogos.impuestos,
+      }}
       describir={(p) => `"${p.nombre}"`}
       antesDeTabla={
         <div className="indicadores">

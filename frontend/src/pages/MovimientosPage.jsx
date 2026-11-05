@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import CrudPage from '../components/CrudPage';
 import MovimientoForm, { TIPOS_MOVIMIENTO } from '../components/forms/MovimientoForm';
 import { useCrud } from '../hooks/useCrud';
+import { useOpciones } from '../hooks/useOpciones';
 import { movimientosService, productosService } from '../services/inventario.service';
 import { formatearColones, formatearEntero, formatearFecha } from '../utils/formato';
 
@@ -18,6 +19,7 @@ const COLUMNAS = [
       </>
     ),
   },
+  { clave: 'bodega', titulo: 'Bodega', render: (m) => <span className="secundario">{m.bodega?.nombre ?? '—'}</span> },
   { clave: 'tipo', titulo: 'Tipo', render: (m) => <span className={`pastilla ${ESTILO_TIPO[m.tipo]}`}>{m.tipo.toLowerCase()}</span> },
   {
     clave: 'cantidad',
@@ -30,11 +32,13 @@ const COLUMNAS = [
   { clave: 'usuario', titulo: 'Registrado por', render: (m) => <span className="secundario">{m.usuario?.nombre ?? '—'}</span> },
 ];
 
-const BUSQUEDA = [(m) => m.producto?.nombre, (m) => m.producto?.sku, (m) => m.motivo];
+const BUSQUEDA = [(m) => m.producto?.nombre, (m) => m.producto?.sku, (m) => m.motivo, (m) => m.bodega?.nombre];
+const BODEGAS = ['bodegas'];
 
 export default function MovimientosPage() {
   const movimientos = useCrud(movimientosService);
   const productos = useCrud(productosService);
+  const { bodegas = [] } = useOpciones(BODEGAS);
   const [tipoFiltro, setTipoFiltro] = useState('');
 
   // Cada movimiento cambia el stock, así que también se recargan los productos.
@@ -62,7 +66,7 @@ export default function MovimientosPage() {
       camposBusqueda={BUSQUEDA}
       filtrar={filtrar}
       Formulario={MovimientoForm}
-      propsFormulario={{ productos: productos.items }}
+      propsFormulario={{ productos: productos.items, bodegas }}
       describir={(m) => `la ${m.tipo.toLowerCase()} de ${m.cantidad} × ${m.producto?.nombre ?? 'producto'} (el stock se revierte)`}
       filtroExtra={
         <>

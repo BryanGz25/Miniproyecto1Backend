@@ -18,6 +18,7 @@ const validar = (v) => {
 
 const convertir = (v) => ({
   productoId: aNumero(v.productoId),
+  bodegaId: aNumero(v.bodegaId),
   tipo: v.tipo,
   cantidad: aNumero(v.cantidad),
   costoUnitario: aNumero(v.costoUnitario),
@@ -25,10 +26,11 @@ const convertir = (v) => ({
   fecha: v.fecha,
 });
 
-export default function MovimientoForm({ inicial, onGuardar, onCancelar, textoGuardar, productos }) {
+export default function MovimientoForm({ inicial, onGuardar, onCancelar, textoGuardar, productos, bodegas = [] }) {
   const { valores, cambiar, errores, enviando, enviar } = useFormulario(
     {
       productoId: inicial.productoId ? String(inicial.productoId) : '',
+      bodegaId: inicial.bodegaId ? String(inicial.bodegaId) : '',
       tipo: inicial.tipo ?? 'ENTRADA',
       cantidad: inicial.cantidad ? String(inicial.cantidad) : '',
       costoUnitario: inicial.costoUnitario != null ? String(inicial.costoUnitario) : '',
@@ -49,6 +51,18 @@ export default function MovimientoForm({ inicial, onGuardar, onCancelar, textoGu
             {productos.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.sku} · {p.nombre}
+              </option>
+            ))}
+          </select>
+        )}
+      </Campo>
+      <Campo etiqueta="Bodega" completo>
+        {(id) => (
+          <select id={id} name="bodegaId" className="campo" value={valores.bodegaId} onChange={cambiar}>
+            <option value="">Sin bodega</option>
+            {bodegas.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.nombre}
               </option>
             ))}
           </select>

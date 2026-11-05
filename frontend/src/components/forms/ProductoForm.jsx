@@ -22,12 +22,27 @@ const convertir = (v) => ({
   stockMinimo: aNumero(v.stockMinimo) ?? 0,
   categoriaId: aNumero(v.categoriaId),
   proveedorId: aNumero(v.proveedorId),
+  marcaId: aNumero(v.marcaId),
+  unidadMedidaId: aNumero(v.unidadMedidaId),
+  impuestoId: aNumero(v.impuestoId),
   activo: v.activo,
 });
 
+// <select> opcional de un catálogo (marca, unidad, impuesto…).
+const SelectCatalogo = ({ id, name, valor, onChange, items, etiqueta }) => (
+  <select id={id} name={name} className="campo" value={valor} onChange={onChange}>
+    <option value="">Ninguno</option>
+    {items.map((x) => (
+      <option key={x.id} value={x.id}>
+        {etiqueta(x)}
+      </option>
+    ))}
+  </select>
+);
+
 const texto = (valor) => (valor === null || valor === undefined ? '' : String(valor));
 
-export default function ProductoForm({ inicial, onGuardar, onCancelar, textoGuardar, categorias, proveedores }) {
+export default function ProductoForm({ inicial, onGuardar, onCancelar, textoGuardar, categorias, proveedores, marcas = [], unidades = [], impuestos = [] }) {
   const { valores, cambiar, errores, enviando, enviar } = useFormulario(
     {
       sku: inicial.sku ?? '',
@@ -39,6 +54,9 @@ export default function ProductoForm({ inicial, onGuardar, onCancelar, textoGuar
       stockMinimo: texto(inicial.stockMinimo ?? 0),
       categoriaId: texto(inicial.categoriaId),
       proveedorId: texto(inicial.proveedorId),
+      marcaId: texto(inicial.marcaId),
+      unidadMedidaId: texto(inicial.unidadMedidaId),
+      impuestoId: texto(inicial.impuestoId),
       activo: inicial.activo ?? true,
     },
     { validar, convertir },
@@ -64,7 +82,7 @@ export default function ProductoForm({ inicial, onGuardar, onCancelar, textoGuar
       <Campo etiqueta="Nombre" requerido completo>
         {(id) => <input id={id} name="nombre" className="campo" maxLength={120} value={valores.nombre} onChange={cambiar} placeholder="Agua 600 ml" />}
       </Campo>
-      <Campo etiqueta="Proveedor" completo>
+      <Campo etiqueta="Proveedor">
         {(id) => (
           <select id={id} name="proveedorId" className="campo" value={valores.proveedorId} onChange={cambiar}>
             <option value="">Sin proveedor</option>
@@ -75,6 +93,15 @@ export default function ProductoForm({ inicial, onGuardar, onCancelar, textoGuar
             ))}
           </select>
         )}
+      </Campo>
+      <Campo etiqueta="Marca">
+        {(id) => <SelectCatalogo id={id} name="marcaId" valor={valores.marcaId} onChange={cambiar} items={marcas} etiqueta={(x) => x.nombre} />}
+      </Campo>
+      <Campo etiqueta="Unidad de medida">
+        {(id) => <SelectCatalogo id={id} name="unidadMedidaId" valor={valores.unidadMedidaId} onChange={cambiar} items={unidades} etiqueta={(x) => `${x.nombre} (${x.abreviatura})`} />}
+      </Campo>
+      <Campo etiqueta="Impuesto">
+        {(id) => <SelectCatalogo id={id} name="impuestoId" valor={valores.impuestoId} onChange={cambiar} items={impuestos} etiqueta={(x) => `${x.nombre} · ${x.porcentaje} %`} />}
       </Campo>
       <Campo etiqueta="Precio de costo (₡)" requerido>
         {(id) => <input id={id} name="precioCosto" type="number" min="0" step="0.01" className="campo" value={valores.precioCosto} onChange={cambiar} placeholder="250" />}
