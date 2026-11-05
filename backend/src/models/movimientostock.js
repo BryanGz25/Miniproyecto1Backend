@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       MovimientoStock.belongsTo(models.Producto, { foreignKey: 'productoId', as: 'producto' });
       MovimientoStock.belongsTo(models.Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
+      MovimientoStock.belongsTo(models.Bodega, { foreignKey: 'bodegaId', as: 'bodega' });
     }
   }
 
@@ -14,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       productoId: { type: DataTypes.INTEGER, allowNull: false },
       usuarioId: { type: DataTypes.INTEGER, allowNull: true },
+      bodegaId: { type: DataTypes.INTEGER, allowNull: true },
       tipo: { type: DataTypes.ENUM('ENTRADA', 'SALIDA', 'AJUSTE'), allowNull: false },
       cantidad: { type: DataTypes.INTEGER, allowNull: false, validate: { min: 1 } },
       costoUnitario: {
