@@ -1,88 +1,116 @@
-### Pruebas de la API (extensión REST Client, o copiar a Thunder Client / Postman)
+### Pruebas de la API con la extensión REST Client (VS Code / Antigravity).
+### La colección completa para Postman o Thunder Client está en docs/postman/.
 @base = http://localhost:3000/api
 
-### Salud del servidor
+### ───────── Autenticación ─────────
+
+### Salud del servidor (público) -> 200
 GET {{base}}/health
 
-### 1. Crear categoría  -> 201
-POST {{base}}/categorias
+### Registro (público) -> 201, sin password en la respuesta
+POST {{base}}/auth/register
 Content-Type: application/json
 
-{ "nombre": "Bebidas", "descripcion": "Refrescos, jugos y agua" }
+{ "nombre": "Ana Rodríguez", "correo": "ana@inventario.test", "password": "Segura2026" }
 
-### 2. Listar categorías  -> 200
-GET {{base}}/categorias
-
-### 3. Ver una categoría  -> 200
-GET {{base}}/categorias/1
-
-### 4. Categoría inexistente  -> 404
-GET {{base}}/categorias/9999
-
-### 5. Validación: falta nombre y tipo incorrecto  -> 400
-POST {{base}}/categorias
+### Registro con correo repetido -> 400
+POST {{base}}/auth/register
 Content-Type: application/json
 
-{ "descripcion": 123 }
+{ "nombre": "Ana", "correo": "ana@inventario.test", "password": "Segura2026" }
 
-### 6. Duplicado  -> 409
-POST {{base}}/categorias
+### Login con contraseña incorrecta -> 401
+POST {{base}}/auth/login
 Content-Type: application/json
 
-{ "nombre": "Bebidas" }
+{ "correo": "demo@inventario.test", "password": "incorrecta" }
 
-### 7. Actualizar categoría  -> 200
-PUT {{base}}/categorias/1
+### Login (usuario demo del seeder) -> 200 { token, usuario }
+# @name login
+POST {{base}}/auth/login
 Content-Type: application/json
 
-{ "nombre": "Bebidas y refrescos", "descripcion": "Línea de bebidas" }
+{ "correo": "demo@inventario.test", "password": "Demo12345" }
 
-### 8. Crear producto (relación con categoría)  -> 201
-POST {{base}}/productos
-Content-Type: application/json
+@token = {{login.response.body.token}}
 
-{
-  "sku": "beb-001",
-  "nombre": "Agua 600 ml",
-  "precioCosto": 250,
-  "precioVenta": 450,
-  "stockActual": 120,
-  "stockMinimo": 24,
-  "categoriaId": 1
-}
+### Perfil del usuario logueado -> 200
+GET {{base}}/auth/me
+Authorization: Bearer {{token}}
 
-### 9. Listar productos (incluye categoría y proveedor)  -> 200
+### Sin token -> 401 { "error": "No autorizado" }
 GET {{base}}/productos
 
-### 10. Producto con precio negativo y categoría inexistente  -> 400
-POST {{base}}/productos
+### ───────── Categorías ─────────
+
+### Crear categoría -> 201
+POST {{base}}/categorias
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "sku": "X-1", "nombre": "Malo", "precioCosto": -5, "precioVenta": "100", "categoriaId": 999 }
+{ "nombre": "Snacks", "descripcion": "Galletas y bocadillos" }
 
-### 11. Borrar categoría con productos  -> 409
+### Listar categorías -> 200
+GET {{base}}/categorias
+Authorization: Bearer {{token}}
+
+### Categoría inexistente -> 404
+GET {{base}}/categorias/9999
+Authorization: Bearer {{token}}
+
+### Tipo incorrecto -> 400
+POST {{base}}/categorias
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nombre": 123 }
+
+### Borrar categoría con productos -> 409
 DELETE {{base}}/categorias/1
+Authorization: Bearer {{token}}
 
-### 12. Crear proveedor  -> 201
+### ───────── Proveedores ─────────
+
+### Crear proveedor -> 201
 POST {{base}}/proveedores
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "nombre": "Distribuidora Norte", "identificacion": "3-101-999999", "telefono": "+506 2666-7788", "email": "ventas@norte.cr" }
 
-### 13. Listar proveedores  -> 200
+### Listar proveedores -> 200
 GET {{base}}/proveedores
+Authorization: Bearer {{token}}
 
-### 14. Entrada de stock (suma al producto 1)  -> 201
+### ───────── Productos ─────────
+
+### Listar productos (incluye categoría y proveedor) -> 200
+GET {{base}}/productos
+Authorization: Bearer {{token}}
+
+### Producto con precio negativo y categoría inexistente -> 400
+POST {{base}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sku": "X-1", "nombre": "Malo", "precioCosto": -5, "precioVenta": "100", "categoriaId": 999 }
+
+### ───────── Movimientos ─────────
+
+### Entrada de stock al producto 1 -> 201 (guarda quién lo registró)
 POST {{base}}/movimientos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "productoId": 1, "tipo": "ENTRADA", "cantidad": 10, "costoUnitario": 250, "motivo": "Compra factura #2001" }
 
-### 15. Salida mayor al stock disponible  -> 409
+### Salida mayor al stock -> 409
 POST {{base}}/movimientos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "productoId": 1, "tipo": "SALIDA", "cantidad": 99999 }
 
-### 16. Movimientos de un producto  -> 200
+### Movimientos de un producto -> 200
 GET {{base}}/movimientos?productoId=1
+Authorization: Bearer {{token}}
