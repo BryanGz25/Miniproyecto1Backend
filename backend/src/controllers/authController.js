@@ -81,4 +81,4 @@ const login = async (req, res) => {
 // GET /api/auth/me  (protegido)
 const me = (req, res) => res.status(200).json(req.usuario);
 
-module.exports = { register, login, me };
+module.exports = { register, login, me, validarCorreo, validarPassword, COSTO_BCRYPT };
