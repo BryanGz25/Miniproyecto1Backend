@@ -6,6 +6,14 @@ export const formatearColones = (valor) => (valor === null || valor === undefine
 export const formatearEntero = (valor) => entero.format(valor ?? 0);
 export const formatearFecha = (valor) => (valor ? fechaHora.format(new Date(valor)) : '—');
 
+const soloFecha = new Intl.DateTimeFormat('es-CR', { dateStyle: 'medium' });
+/** Fecha sin hora ('AAAA-MM-DD') leída como fecha local, para que no se corra un día por la zona horaria. */
+export const aFechaLocal = (valor) => {
+  const [a, m, d] = String(valor).split('-').map(Number);
+  return new Date(a, m - 1, d);
+};
+export const formatearFechaCorta = (valor) => (valor ? soloFecha.format(aFechaLocal(valor)) : '—');
+
 /** Convierte una fecha ISO al formato que usa <input type="datetime-local">. */
 export const aInputFecha = (valor) => {
   const fecha = valor ? new Date(valor) : new Date();
