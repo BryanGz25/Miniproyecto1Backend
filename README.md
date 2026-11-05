@@ -124,7 +124,18 @@ Recursos: `usuarios`, `categorias`, `proveedores`, `productos`, `movimientos`, `
 
 Los listados aceptan filtrar por cualquier clave foránea, por ejemplo `GET /api/ubicaciones?bodegaId=1` o `GET /api/detalles-venta?ventaId=3`.
 
-**Cómo están hechos:** las 4 entidades del Día 1 y Usuarios tienen controladores propios, porque llevan reglas especiales (stock en transacción, hash del password). Las otras 15 usan `controllers/crudFactory.js`, que arma los 5 endpoints a partir de la descripción de sus campos en `controllers/entidades.controller.js`. Así todas validan igual: obligatorios, tipos, formatos, rangos y que cada clave foránea exista.
+**Cómo están hechos:** hay **21 controladores**, uno por entidad más el de autenticación, y cada uno tiene su archivo de rutas.
+- **Lógica escrita a mano (5):** las 4 entidades del Día 1 y Usuarios, porque llevan reglas especiales como el stock en transacción o el hash del password.
+- **Generados con un ayudante (15):** las entidades de administración describen sus campos y relaciones en su propio archivo (por ejemplo `ventas.controller.js`) y usan `crudFactory.js` para armar los 5 endpoints. Así todas validan igual: obligatorios, tipos, formatos, rangos y que cada clave foránea exista.
+
+| Área | Controladores |
+|---|---|
+| Autenticación | `authController.js` |
+| Personal | `usuarios`, `departamentos`, `empleados` |
+| Inventario | `categorias`, `productos`, `movimientos`, `marcas`, `unidadesMedida`, `impuestos`, `lotes` |
+| Bodegas | `bodegas`, `ubicaciones` |
+| Compras | `proveedores`, `contactosProveedor`, `ordenesCompra`, `detallesOrdenCompra` |
+| Ventas | `clientes`, `metodosPago`, `ventas`, `detallesVenta` |
 
 ## Probar la API
 
@@ -144,9 +155,10 @@ backend/
     ├── config/        database.js (MySQL) y jwt.js (secreto y expiración)
     ├── database/      migraciones y seeders
     ├── models/        20 modelos Sequelize con sus relaciones (usuario.js, producto.js, venta.js…)
-    ├── controllers/   authController.js, usuarios y Día 1 con controller propio,
-    │                  crudFactory.js + entidades.controller.js para las otras 15
-    ├── routes/        authRoutes.js + rutas /api/<recurso>
+    ├── controllers/   21 controladores (authController.js + uno por entidad)
+    │                  y crudFactory.js, el ayudante que comparten 15 de ellos
+    ├── routes/        21 archivos de rutas (authRoutes.js + <entidad>.routes.js) e index.js
+    ├── utils/         validaciones, relaciones compartidas y formato de decimales
     ├── middlewares/   authMiddleware.js (JWT) y errores.js
     └── app.js · server.js
 
