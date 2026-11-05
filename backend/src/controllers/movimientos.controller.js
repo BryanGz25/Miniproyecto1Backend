@@ -1,4 +1,4 @@
-const { MovimientoStock, Producto, Usuario, sequelize } = require('../models');
+const { MovimientoStock, Producto, Usuario, Bodega, sequelize } = require('../models');
 const { textoOpcional, numeroNoNegativo, idValido, parsearId } = require('../utils/validaciones');
 
 const TIPOS = ['ENTRADA', 'SALIDA', 'AJUSTE'];
@@ -9,6 +9,7 @@ const efectoEnStock = ({ tipo, cantidad }) => (tipo === 'ENTRADA' ? cantidad : -
 const INCLUIR_PRODUCTO = [
   { model: Producto, as: 'producto', attributes: ['id', 'sku', 'nombre', 'stockActual'] },
   { model: Usuario, as: 'usuario', attributes: ['id', 'nombre'] }, // quién registró el movimiento
+  { model: Bodega, as: 'bodega', attributes: ['id', 'nombre'] }, // dónde ocurrió
 ];
 
 // Error de negocio que se responde con un código HTTP concreto.
@@ -19,10 +20,11 @@ class ErrorNegocio extends Error {
   }
 }
 
-const validarMovimiento = (body = {}) => {
+const validarMovimiento = async (body = {}) => {
   const errores = [];
   const datos = {
     productoId: body.productoId,
+    bodegaId: body.bodegaId ?? null,
     tipo: typeof body.tipo === 'string' ? body.tipo.trim().toUpperCase() : body.tipo,
     cantidad: numeroNoNegativo(errores, 'cantidad', body.cantidad, { entero: true }),
     costoUnitario: numeroNoNegativo(errores, 'costoUnitario', body.costoUnitario, { requerido: false }) ?? null,
@@ -32,6 +34,11 @@ const validarMovimiento = (body = {}) => {
   if (!idValido(datos.productoId)) errores.push("El campo 'productoId' es obligatorio y debe ser un entero positivo.");
   if (!TIPOS.includes(datos.tipo)) errores.push(`El campo 'tipo' debe ser uno de: ${TIPOS.join(', ')}.`);
   if (datos.cantidad === 0) errores.push("El campo 'cantidad' debe ser mayor que 0.");
+  if (datos.bodegaId !== null && !idValido(datos.bodegaId)) {
+    errores.push("El campo 'bodegaId' debe ser un entero positivo o null.");
+  } else if (datos.bodegaId !== null && !(await Bodega.findByPk(datos.bodegaId))) {
+    errores.push(`No existe la bodega con id ${datos.bodegaId}.`);
+  }
 
   if (body.fecha !== undefined && body.fecha !== null && body.fecha !== '') {
     const fecha = new Date(body.fecha);
@@ -67,7 +74,7 @@ const responderError = (res, error) => {
 
 // POST /api/movimientos
 const crear = async (req, res) => {
-  const { errores, datos } = validarMovimiento(req.body);
+  const { errores, datos } = await validarMovimiento(req.body);
   if (errores.length) return res.status(400).json({ error: 'Datos inválidos.', detalles: errores });
 
   try {
@@ -114,7 +121,7 @@ const actualizar = async (req, res) => {
   const id = parsearId(req.params.id);
   if (!id) return res.status(400).json({ error: 'El id debe ser un número entero positivo.' });
 
-  const { errores, datos } = validarMovimiento(req.body);
+  const { errores, datos } = await validarMovimiento(req.body);
   if (errores.length) return res.status(400).json({ error: 'Datos inválidos.', detalles: errores });
 
   try {

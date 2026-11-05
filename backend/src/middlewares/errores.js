@@ -21,8 +21,11 @@ const manejadorErrores = (err, _req, res, _next) => {
     return res.status(409).json({ error: `Ya existe un registro con ese valor en: ${campos}.` });
   }
   if (err instanceof ForeignKeyConstraintError) {
+    // MySQL indica la tabla que depende de este registro: "... constraint fails (`bd`.`DetallesVenta`, ..."
+    const tabla = /`[^`]+`\.`([^`]+)`/.exec(err.parent?.sqlMessage || '')?.[1];
+    const dependientes = tabla ? tabla.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase() : 'otros registros';
     return res.status(409).json({
-      error: 'No se puede eliminar porque tiene registros asociados (productos o movimientos). Elimínalos o reasígnalos primero.',
+      error: `No se puede eliminar porque tiene ${dependientes} asociados. Elimínalos o reasígnalos primero.`,
     });
   }
   if (err instanceof ValidationError) {

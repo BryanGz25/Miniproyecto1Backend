@@ -1,4 +1,4 @@
-const { Producto, Categoria, Proveedor } = require('../models');
+const { Producto, Categoria, Proveedor, Marca, UnidadMedida, Impuesto } = require('../models');
 const {
   textoRequerido,
   textoOpcional,
@@ -11,6 +11,17 @@ const {
 const INCLUIR_RELACIONES = [
   { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] },
   { model: Proveedor, as: 'proveedor', attributes: ['id', 'nombre'] },
+  { model: Marca, as: 'marca', attributes: ['id', 'nombre'] },
+  { model: UnidadMedida, as: 'unidadMedida', attributes: ['id', 'nombre', 'abreviatura'] },
+  { model: Impuesto, as: 'impuesto', attributes: ['id', 'nombre', 'porcentaje'] },
+];
+
+// Claves foráneas opcionales: [campo, modelo, cómo se nombra en los errores]
+const FK_OPCIONALES = [
+  ['proveedorId', Proveedor, 'el proveedor'],
+  ['marcaId', Marca, 'la marca'],
+  ['unidadMedidaId', UnidadMedida, 'la unidad de medida'],
+  ['impuestoId', Impuesto, 'el impuesto'],
 ];
 
 const validarProducto = (body = {}) => {
@@ -24,13 +35,13 @@ const validarProducto = (body = {}) => {
     stockActual: numeroNoNegativo(errores, 'stockActual', body.stockActual ?? 0, { entero: true }),
     stockMinimo: numeroNoNegativo(errores, 'stockMinimo', body.stockMinimo ?? 0, { entero: true }),
     categoriaId: body.categoriaId,
-    proveedorId: body.proveedorId ?? null,
     activo: booleanoOpcional(errores, 'activo', body.activo),
   };
 
   if (!idValido(datos.categoriaId)) errores.push("El campo 'categoriaId' es obligatorio y debe ser un entero positivo.");
-  if (datos.proveedorId !== null && !idValido(datos.proveedorId)) {
-    errores.push("El campo 'proveedorId' debe ser un entero positivo o null.");
+  for (const [campo] of FK_OPCIONALES) {
+    datos[campo] = body[campo] ?? null;
+    if (datos[campo] !== null && !idValido(datos[campo])) errores.push(`El campo '${campo}' debe ser un entero positivo o null.`);
   }
   if (datos.activo === undefined) delete datos.activo;
 
@@ -38,11 +49,11 @@ const validarProducto = (body = {}) => {
 };
 
 // Verifica que las claves foráneas apunten a registros existentes.
-const validarRelaciones = async ({ categoriaId, proveedorId }) => {
+const validarRelaciones = async (datos) => {
   const errores = [];
-  if (!(await Categoria.findByPk(categoriaId))) errores.push(`No existe la categoría con id ${categoriaId}.`);
-  if (proveedorId !== null && !(await Proveedor.findByPk(proveedorId))) {
-    errores.push(`No existe el proveedor con id ${proveedorId}.`);
+  if (!(await Categoria.findByPk(datos.categoriaId))) errores.push(`No existe la categoría con id ${datos.categoriaId}.`);
+  for (const [campo, modelo, nombre] of FK_OPCIONALES) {
+    if (datos[campo] !== null && !(await modelo.findByPk(datos[campo]))) errores.push(`No existe ${nombre} con id ${datos[campo]}.`);
   }
   return errores;
 };
