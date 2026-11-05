@@ -2,12 +2,54 @@ import { NavLink } from 'react-router-dom';
 import Icono from './Icono';
 import { useAuth } from '../context/AuthContext';
 
-export const SECCIONES = [
-  { ruta: '/resumen', titulo: 'Resumen', icono: 'resumen' },
-  { ruta: '/productos', titulo: 'Productos', icono: 'caja' },
-  { ruta: '/categorias', titulo: 'Categorías', icono: 'etiqueta' },
-  { ruta: '/proveedores', titulo: 'Proveedores', icono: 'camion' },
-  { ruta: '/movimientos', titulo: 'Movimientos', icono: 'flechas' },
+// Menú agrupado por área. Cada enlace es un CRUD (salvo Resumen): 20 en total.
+export const MENU = [
+  { grupo: null, enlaces: [['/resumen', 'Resumen', 'resumen']] },
+  {
+    grupo: 'Inventario',
+    enlaces: [
+      ['/productos', 'Productos', 'caja'],
+      ['/categorias', 'Categorías', 'etiqueta'],
+      ['/marcas', 'Marcas', 'estrella'],
+      ['/unidades-medida', 'Unidades de medida', 'regla'],
+      ['/impuestos', 'Impuestos', 'porcentaje'],
+      ['/lotes', 'Lotes', 'calendario'],
+      ['/movimientos', 'Movimientos', 'flechas'],
+    ],
+  },
+  {
+    grupo: 'Bodegas',
+    enlaces: [
+      ['/bodegas', 'Bodegas', 'almacen'],
+      ['/ubicaciones', 'Ubicaciones', 'pin'],
+    ],
+  },
+  {
+    grupo: 'Compras',
+    enlaces: [
+      ['/proveedores', 'Proveedores', 'camion'],
+      ['/contactos-proveedor', 'Contactos', 'contacto'],
+      ['/ordenes-compra', 'Órdenes de compra', 'documento'],
+      ['/detalles-orden-compra', 'Detalle de órdenes', 'lista'],
+    ],
+  },
+  {
+    grupo: 'Ventas',
+    enlaces: [
+      ['/clientes', 'Clientes', 'persona'],
+      ['/metodos-pago', 'Métodos de pago', 'tarjeta'],
+      ['/ventas', 'Ventas', 'recibo'],
+      ['/detalles-venta', 'Detalle de ventas', 'lista'],
+    ],
+  },
+  {
+    grupo: 'Personal',
+    enlaces: [
+      ['/departamentos', 'Departamentos', 'edificio'],
+      ['/empleados', 'Empleados', 'persona'],
+      ['/usuarios', 'Usuarios', 'usuarios'],
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -20,11 +62,16 @@ export default function Sidebar() {
         Inventario
       </div>
       <nav className="nav" aria-label="Secciones">
-        {SECCIONES.map(({ ruta, titulo, icono }) => (
-          <NavLink key={ruta} to={ruta}>
-            <Icono nombre={icono} />
-            {titulo}
-          </NavLink>
+        {MENU.map(({ grupo, enlaces }) => (
+          <div key={grupo ?? 'general'} className="nav-grupo">
+            {grupo && <p className="nav-titulo">{grupo}</p>}
+            {enlaces.map(([ruta, titulo, icono]) => (
+              <NavLink key={ruta} to={ruta}>
+                <Icono nombre={icono} />
+                {titulo}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
       <div className="sesion">

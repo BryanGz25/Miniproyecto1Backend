@@ -10,6 +10,7 @@ import ProductosPage from './pages/ProductosPage';
 import CategoriasPage from './pages/CategoriasPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import MovimientosPage from './pages/MovimientosPage';
+import { PAGINAS_ADMIN } from './pages/admin';
 
 export default function App() {
   return (
@@ -30,6 +31,10 @@ export default function App() {
                 <Route path="/categorias" element={<CategoriasPage />} />
                 <Route path="/proveedores" element={<ProveedoresPage />} />
                 <Route path="/movimientos" element={<MovimientosPage />} />
+                {/* 16 vistas de administración (catálogos, bodegas, compras, ventas, personal y usuarios) */}
+                {Object.entries(PAGINAS_ADMIN).map(([ruta, Pagina]) => (
+                  <Route key={ruta} path={`/${ruta}`} element={<Pagina />} />
+                ))}
               </Route>
             </Route>
 
