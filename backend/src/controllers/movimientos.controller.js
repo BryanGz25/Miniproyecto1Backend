@@ -1,4 +1,4 @@
-const { MovimientoStock, Producto, sequelize } = require('../models');
+const { MovimientoStock, Producto, Usuario, sequelize } = require('../models');
 const { textoOpcional, numeroNoNegativo, idValido, parsearId } = require('../utils/validaciones');
 
 const TIPOS = ['ENTRADA', 'SALIDA', 'AJUSTE'];
@@ -6,7 +6,10 @@ const TIPOS = ['ENTRADA', 'SALIDA', 'AJUSTE'];
 // ENTRADA suma al stock; SALIDA y AJUSTE (merma, daño, pérdida) restan.
 const efectoEnStock = ({ tipo, cantidad }) => (tipo === 'ENTRADA' ? cantidad : -cantidad);
 
-const INCLUIR_PRODUCTO = [{ model: Producto, as: 'producto', attributes: ['id', 'sku', 'nombre', 'stockActual'] }];
+const INCLUIR_PRODUCTO = [
+  { model: Producto, as: 'producto', attributes: ['id', 'sku', 'nombre', 'stockActual'] },
+  { model: Usuario, as: 'usuario', attributes: ['id', 'nombre'] }, // quién registró el movimiento
+];
 
 // Error de negocio que se responde con un código HTTP concreto.
 class ErrorNegocio extends Error {
@@ -70,7 +73,7 @@ const crear = async (req, res) => {
   try {
     const id = await sequelize.transaction(async (transaction) => {
       await moverStock(datos.productoId, efectoEnStock(datos), transaction);
-      const movimiento = await MovimientoStock.create(datos, { transaction });
+      const movimiento = await MovimientoStock.create({ ...datos, usuarioId: req.usuario.id }, { transaction });
       return movimiento.id;
     });
     const movimiento = await MovimientoStock.findByPk(id, { include: INCLUIR_PRODUCTO });
