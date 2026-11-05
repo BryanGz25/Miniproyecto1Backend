@@ -1,5 +1,6 @@
 // Genera los 5 endpoints CRUD de una entidad a partir de la descripción de sus campos.
-// Así las 15 entidades de catálogo, compras, ventas y personal validan igual que las del Día 1.
+// Lo usan los 15 controladores de administración (marcas.controller.js, ventas.controller.js…)
+// para que todos validen igual que las entidades del Día 1.
 const models = require('../models');
 const { textoRequerido, textoOpcional, numeroNoNegativo, booleanoOpcional, idValido, parsearId } = require('../utils/validaciones');
 
@@ -165,15 +166,4 @@ function crearControladorCrud({ modelo, entidad, campos, incluir = [], orden = [
   };
 }
 
-/** Router Express con los 5 endpoints de un controlador CRUD. */
-function crearRutasCrud(controller) {
-  const router = require('express').Router();
-  router.post('/', controller.crear);
-  router.get('/', controller.listar);
-  router.get('/:id', controller.obtener);
-  router.put('/:id', controller.actualizar);
-  router.delete('/:id', controller.eliminar);
-  return router;
-}
-
-module.exports = { crearControladorCrud, crearRutasCrud };
+module.exports = { crearControladorCrud };
