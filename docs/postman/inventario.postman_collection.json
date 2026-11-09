@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Inventario PYMES · API REST con JWT (20 CRUDs)",
-    "description": "Mini Proyecto 1. Ejecuta la colección completa con el Runner, en orden: el login guarda el token y cada \"Crear\" guarda su id para las peticiones siguientes. Cubre los 20 CRUDs, caminos felices y respuestas 400, 401, 404 y 409, y al final borra lo que creó.",
+    "name": "Inventario PYMES · API REST con JWT, perfiles y permisos",
+    "description": "Mini Proyecto 1. Requiere haber ejecutado `npm run db:migrate` y `npm run db:seed` en backend/ (usa la cuenta demo@inventario.test, perfil Administrador). Ejecuta la colección completa con el Runner, en orden: el login guarda el token y cada \"Crear\" guarda su id para las peticiones siguientes. Cubre los 20 CRUDs, caminos felices y respuestas 200, 201, 304, 400, 401, 404, 409 y 413. La carpeta 13 prueba perfiles y permisos, y la 14 los códigos de estado. Al final borra lo que creó.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -104,6 +104,50 @@
     {
       "key": "usuarioId",
       "value": ""
+    },
+    {
+      "key": "usuarioRegistradoId",
+      "value": ""
+    },
+    {
+      "key": "perfilAdministradorId",
+      "value": ""
+    },
+    {
+      "key": "perfilVendedorId",
+      "value": ""
+    },
+    {
+      "key": "usuarioPruebaId",
+      "value": ""
+    },
+    {
+      "key": "tokenPrueba",
+      "value": ""
+    },
+    {
+      "key": "categoriaPruebaId",
+      "value": ""
+    },
+    {
+      "key": "usuarioIntrusoId",
+      "value": ""
+    },
+    {
+      "key": "etagCategorias",
+      "value": ""
+    },
+    {
+      "key": "categoriaEtagId",
+      "value": ""
+    },
+    {
+      "key": "cuerpoGrande",
+      "value": ""
+    },
+    {
+      "key": "productoLoteId",
+      "value": ""
     }
   ],
   "item": [
@@ -131,7 +175,8 @@
                 "exec": [
                   "pm.test('Responde 201', () => pm.response.to.have.status(201));",
                   "pm.test('Responde JSON', () => pm.response.to.be.json);",
-                  "pm.test('No expone el password', () => pm.expect(JSON.stringify(pm.response.json())).to.not.include('\"password\"'));"
+                  "pm.test('No expone el password', () => pm.expect(JSON.stringify(pm.response.json())).to.not.include('\"password\"'));",
+                  "pm.collectionVariables.set('usuarioRegistradoId', pm.response.json().id);"
                 ]
               }
             }
@@ -312,7 +357,7 @@
           }
         },
         {
-          "name": "Login OK (guarda el token) → 200",
+          "name": "Login OK como Administrador (guarda el token) → 200",
           "event": [
             {
               "listen": "test",
@@ -324,7 +369,9 @@
                   "pm.test('No expone el password', () => pm.expect(JSON.stringify(pm.response.json())).to.not.include('\"password\"'));",
                   "const j = pm.response.json();",
                   "pm.collectionVariables.set('token', j.token);",
-                  "pm.collectionVariables.set('usuarioActualId', j.usuario.id);"
+                  "pm.collectionVariables.set('usuarioActualId', j.usuario.id);",
+                  "pm.test('Entra con perfil Administrador', () => pm.expect(j.usuario.perfil.nombre).to.eql('Administrador'));",
+                  "pm.test('Devuelve sus permisos', () => pm.expect(j.usuario.permisos).to.be.an('array').that.includes('productos.crear'));"
                 ]
               }
             }
@@ -342,7 +389,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"correo\": \"postman{{sufijo}}@inventario.test\",\n  \"password\": \"Prueba12345\"\n}",
+              "raw": "{\n  \"correo\": \"demo@inventario.test\",\n  \"password\": \"Demo12345\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -359,7 +406,7 @@
                 "login"
               ]
             },
-            "description": "Guarda el JWT en {{token}}; las demás peticiones lo usan como Bearer."
+            "description": "Usa la cuenta demo del seeder (perfil Administrador). Un usuario recién registrado solo tiene perfil Consulta."
           }
         },
         {
@@ -7560,6 +7607,2707 @@
               ],
               "path": [
                 "marcas"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Perfiles y permisos",
+      "description": "Perfiles, endpoints ocultos (404 igual al de una ruta inexistente) y el flujo completo del administrador: habilitar y deshabilitar permisos de otro usuario.",
+      "item": [
+        {
+          "name": "Admin · perfil y permisos (me) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Es Administrador', () => pm.expect(j.esAdministrador).to.eql(true));",
+                  "pm.test('Trae el catálogo de permisos', () => pm.expect(j.permisos.length).to.be.above(70));",
+                  "pm.test('No expone el password', () => pm.expect(j).to.not.have.property('password'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · listar perfiles → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Hay al menos 4 perfiles', () => pm.expect(j.length).to.be.at.least(4));",
+                  "pm.test('Incluye los perfiles del sistema', () => pm.expect(j.map((p) => p.nombre)).to.include.members(['Administrador', 'Supervisor', 'Bodeguero', 'Vendedor', 'Consulta']));",
+                  "pm.collectionVariables.set('perfilAdministradorId', j.find((p) => p.nombre === 'Administrador').id);",
+                  "pm.collectionVariables.set('perfilVendedorId', j.find((p) => p.nombre === 'Vendedor').id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/perfiles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfiles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Perfiles · sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/perfiles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfiles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registro público ignora perfilId → 201 (Consulta)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Queda como Consulta', () => pm.expect(j.perfil.nombre).to.eql('Consulta'));",
+                  "pm.test('No es administrador', () => pm.expect(j.esAdministrador).to.eql(false));",
+                  "pm.collectionVariables.set('usuarioIntrusoId', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Intento de escalada\",\n  \"correo\": \"intruso{{sufijo}}@inventario.test\",\n  \"password\": \"Prueba12345\",\n  \"perfilId\": {{perfilAdministradorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Aunque el cuerpo pida el perfil Administrador, quien se registra por su cuenta siempre queda como Consulta."
+          }
+        },
+        {
+          "name": "Admin · crear usuario con perfil Vendedor → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Tiene perfil Vendedor', () => pm.expect(j.perfil.nombre).to.eql('Vendedor'));",
+                  "pm.test('No expone el password', () => pm.expect(j).to.not.have.property('password'));",
+                  "pm.collectionVariables.set('usuarioPruebaId', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vendedor de prueba\",\n  \"correo\": \"vendedor{{sufijo}}@inventario.test\",\n  \"password\": \"Prueba12345\",\n  \"perfilId\": {{perfilVendedorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · crear usuario con perfil inexistente → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Explica el error', () => pm.expect(j.detalles.join(' ')).to.include('perfilId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin perfil\",\n  \"correo\": \"sinperfil{{sufijo}}@inventario.test\",\n  \"password\": \"Prueba12345\",\n  \"perfilId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · login (guarda su token) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Puede vender', () => pm.expect(j.usuario.permisos).to.include('ventas.crear'));",
+                  "pm.test('No puede crear productos', () => pm.expect(j.usuario.permisos).to.not.include('productos.crear'));",
+                  "pm.collectionVariables.set('tokenPrueba', j.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"vendedor{{sufijo}}@inventario.test\",\n  \"password\": \"Prueba12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ver productos → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ver clientes → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clientes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · crear categoría → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: POST /api/categorias' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prohibida {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ver empleados → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: GET /api/empleados' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empleados"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ver alertas → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: GET /api/agentes/alertas/estado' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "estado"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · listar perfiles → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: GET /api/perfiles' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/perfiles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfiles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · listar usuarios → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: GET /api/usuarios' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · darse un permiso a sí mismo → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: PUT /api/usuarios/' + pm.collectionVariables.get('usuarioPruebaId') + '/permisos/categorias.crear' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/categorias.crear",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "categorias.crear"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · subirse a Administrador → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: PUT /api/usuarios/' + pm.collectionVariables.get('usuarioPruebaId') + '' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vendedor de prueba\",\n  \"correo\": \"vendedor{{sufijo}}@inventario.test\",\n  \"perfilId\": {{perfilAdministradorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · ver permisos del usuario → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Es editable', () => pm.expect(j.editable).to.eql(true));",
+                  "pm.test('Productos: lo da el perfil', () => pm.expect(j.permisos.find((p) => p.codigo === 'productos.ver').habilitado).to.eql(true));",
+                  "pm.test('Categorías crear: no lo tiene', () => pm.expect(j.permisos.find((p) => p.codigo === 'categorias.crear').habilitado).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · HABILITAR crear categorías → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Queda habilitado', () => pm.expect(j.permisos.find((p) => p.codigo === 'categorias.crear').habilitado).to.eql(true));",
+                  "pm.test('Marcado como personalizado', () => pm.expect(j.permisos.find((p) => p.codigo === 'categorias.crear').personalizado).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/categorias.crear",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "categorias.crear"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ahora SÍ crea categoría → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('categoriaPruebaId', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Permiso concedido {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "description": "Usa el mismo token de antes: el cambio aplica al instante, sin volver a iniciar sesión."
+          }
+        },
+        {
+          "name": "Admin · DESHABILITAR ver productos → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Queda deshabilitado', () => pm.expect(j.permisos.find((p) => p.codigo === 'productos.ver').habilitado).to.eql(false));",
+                  "pm.test('Su perfil sí lo trae', () => pm.expect(j.permisos.find((p) => p.codigo === 'productos.ver').delPerfil).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/productos.ver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "productos.ver"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ahora NO ve productos → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: GET /api/productos' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · me refleja los cambios → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Sin productos.ver', () => pm.expect(j.permisos).to.not.include('productos.ver'));",
+                  "pm.test('Con categorias.crear', () => pm.expect(j.permisos).to.include('categorias.crear'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · habilitado no booleano → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": \"si\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/productos.ver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "productos.ver"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · permiso inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/no.existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "no.existe"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · usuario inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/999999/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "999999",
+                "permisos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · cambiar sus propios permisos → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioActualId}}/permisos/productos.ver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioActualId}}",
+                "permisos",
+                "productos.ver"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · cambiar su propio perfil → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"correo\": \"demo@inventario.test\",\n  \"perfilId\": {{perfilVendedorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioActualId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioActualId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · restablecer permisos del perfil → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Sin excepciones', () => pm.expect(j.permisos.filter((p) => p.personalizado !== null)).to.have.lengthOf(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · vuelve a ver productos → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendedor · ya no crea categorías → 404 (oculto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Es idéntico a una ruta inexistente', () => pm.expect(pm.response.json()).to.eql({ error: 'Ruta no encontrada: POST /api/categorias' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrueba}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Otra vez prohibida {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · cambiar el perfil del usuario → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "const j = pm.response.json();",
+                  "pm.test('Ahora es Administrador', () => pm.expect(j.perfil.nombre).to.eql('Administrador'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vendedor de prueba\",\n  \"correo\": \"vendedor{{sufijo}}@inventario.test\",\n  \"perfilId\": {{perfilAdministradorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin · quitar permisos a otro admin → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habilitado\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}/permisos/productos.ver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}",
+                "permisos",
+                "productos.ver"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Limpieza · borrar categoría de prueba → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/{{categoriaPruebaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "{{categoriaPruebaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Limpieza · borrar usuario de prueba → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioPruebaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioPruebaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Limpieza · borrar usuario del intento de escalada → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioIntrusoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioIntrusoId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Limpieza · borrar usuario registrado en la carpeta 01 → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioRegistradoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioRegistradoId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14. Códigos de estado",
+      "description": "Respuestas reales. El envío de correo (200, 502 o 503) no se incluye para que el Runner no mande correos; se prueba a mano con POST /agentes/alertas/enviar. El 500 solo ocurre ante un fallo real, por ejemplo con MySQL apagado.",
+      "item": [
+        {
+          "name": "Listar categorías (guarda el ETag) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Trae ETag', () => pm.expect(pm.response.headers.get('ETag')).to.be.a('string'));",
+                  "pm.collectionVariables.set('etagCategorias', pm.response.headers.get('ETag'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sin cambios: mismo ETag → 304",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 304', () => pm.response.to.have.status(304));",
+                  "pm.test('No trae cuerpo', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "If-None-Match",
+                "value": "{{etagCategorias}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "cache-control": true
+            }
+          }
+        },
+        {
+          "name": "Crear categoría (cambian los datos) → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.collectionVariables.set('categoriaEtagId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ETag {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Datos cambiaron: el ETag viejo ya no sirve → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "If-None-Match",
+                "value": "{{etagCategorias}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "cache-control": true
+            }
+          }
+        },
+        {
+          "name": "Limpieza · borrar categoría del ETag → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/{{categoriaEtagId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "{{categoriaEtagId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "URL con codificación inválida → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productos/%E0%A4%A",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos",
+                "%E0%A4%A"
+              ]
+            }
+          }
+        },
+        {
+          "name": "JSON mal formado → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Explica el error', () => pm.expect(pm.response.json().error).to.include('JSON'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Producto para el lote (guarda su id) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.collectionVariables.set('productoLoteId', pm.response.json()[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Número fuera de rango para MySQL → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Explica el error', () => pm.expect(pm.response.json().error).to.include('rango'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{productoLoteId}},\n  \"codigo\": \"RANGO-{{sufijoCorto}}\",\n  \"cantidad\": 99999999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/lotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lotes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cuerpo mayor a 100 kB → 413",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('cuerpoGrande', 'x'.repeat(110000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 413', () => pm.response.to.have.status(413));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"{{cuerpoGrande}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alertas · estado real del inventario → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Trae el diagnóstico', () => pm.expect(pm.response.json().diagnostico.totalCriticos).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "estado"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alertas · vista previa sin enviar → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Trae el HTML', () => pm.expect(pm.response.json().html).to.include('<html>'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/vista-previa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "vista-previa"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alertas · enviar a correo inválido → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correoPrueba\": \"no-es-correo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/enviar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "enviar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · sin cuerpo → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · correo inválido → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"no-es-correo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · agregar → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"prueba{{sufijo}}@inventario.test\",\n  \"etiqueta\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · duplicado → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"prueba{{sufijo}}@inventario.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · eliminar → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"prueba{{sufijo}}@inventario.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Destinatario · ya no existe → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"prueba{{sufijo}}@inventario.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/alertas/destinatarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "alertas",
+                "destinatarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Chatbot · sin cuerpo → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agentes/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Chatbot · mensaje que no es texto → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": 123\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agentes/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agentes",
+                "chat"
               ]
             }
           }

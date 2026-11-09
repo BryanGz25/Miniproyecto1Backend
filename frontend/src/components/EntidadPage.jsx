@@ -3,6 +3,7 @@ import CrudPage from './CrudPage';
 import EntidadForm from './forms/EntidadForm';
 import { useCrud } from '../hooks/useCrud';
 import { useOpciones } from '../hooks/useOpciones';
+import { useAuth } from '../context/AuthContext';
 import { crearServicioCrud } from '../services/api';
 import { aFechaLocal, formatearColones, formatearEntero, formatearFecha, formatearFechaCorta } from '../utils/formato';
 
@@ -57,8 +58,14 @@ const celda = (col, item) => {
 export default function EntidadPage({ config }) {
   const servicio = useMemo(() => crearServicioCrud(config.ruta), [config.ruta]);
   const crud = useCrud(servicio);
+  const { puede } = useAuth();
 
-  const recursosFk = useMemo(() => [...new Set(config.campos.filter((c) => c.tipo === 'fk').map((c) => c.recurso))], [config]);
+  // Las listas de los <select> solo hacen falta si el usuario puede abrir el formulario.
+  const usaFormulario = puede(`${config.ruta}.crear`) || puede(`${config.ruta}.editar`);
+  const recursosFk = useMemo(
+    () => (usaFormulario ? [...new Set(config.campos.filter((c) => c.tipo === 'fk').map((c) => c.recurso))] : []),
+    [config, usaFormulario],
+  );
   const opciones = useOpciones(recursosFk);
 
   const columnas = useMemo(
@@ -75,6 +82,7 @@ export default function EntidadPage({ config }) {
       titulo={config.titulo}
       subtitulo={`${crud.items.length} registros · ${config.subtitulo}`}
       entidad={config.entidad}
+      recurso={config.ruta}
       crud={crud}
       columnas={columnas}
       camposBusqueda={busqueda}

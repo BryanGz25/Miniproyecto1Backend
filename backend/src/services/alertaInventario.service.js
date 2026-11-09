@@ -1,7 +1,7 @@
 'use strict';
 const { Op } = require('sequelize');
 const { Producto, Categoria, Proveedor, Marca, UnidadMedida } = require('../models');
-const { enviarCorreo, obtenerConfiguracion, REMITENTE_DEFAULT } = require('./email.service');
+const { enviarCorreo, REMITENTE_DEFAULT } = require('./email.service');
 const { leerDestinatarios } = require('./destinatarios.service');
 
 /**
@@ -239,7 +239,6 @@ const generarHtmlAlerta = ({ agotados, bajoStock, totalCriticos }) => {
  */
 const ejecutarAlertaInventario = async (opciones = {}) => {
   const { destinatarioPrueba } = opciones;
-  const config = obtenerConfiguracion();
 
   // 1. Obtener productos con stock crítico
   const diagnostico = await consultarProductosCriticos();
@@ -275,10 +274,6 @@ const ejecutarAlertaInventario = async (opciones = {}) => {
     ...resultadoEnvio,
     diagnostico,
     htmlPrevisualizacion: html,
-    configuracion: {
-      remitente: config.usuario,
-      modoSimulado: resultadoEnvio.simulado,
-    },
   };
 };
 

@@ -349,11 +349,13 @@ export const ENTIDADES = [
     columnas: [
       { clave: 'nombre', titulo: 'Nombre', tipo: 'fuerte' },
       { clave: 'correo', titulo: 'Correo' },
+      { clave: 'perfil', titulo: 'Perfil', tipo: 'relacion', mostrar: nombre },
       { clave: 'fechaCreacion', titulo: 'Creado', tipo: 'fechaHora' },
     ],
     campos: [
       { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, max: 100, completo: true },
       { nombre: 'correo', etiqueta: 'Correo', tipo: 'email', requerido: true, completo: true },
+      { nombre: 'perfilId', etiqueta: 'Perfil', tipo: 'fk', requerido: true, recurso: 'perfiles', opcion: nombre, completo: true, ayuda: 'Al cambiarlo se quitan los permisos personalizados del usuario.' },
       { nombre: 'password', etiqueta: 'Contraseña', tipo: 'password', completo: true, ayuda: 'Mínimo 8 caracteres. Al editar, déjala vacía para conservar la actual.' },
     ],
   },

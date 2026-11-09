@@ -2,12 +2,20 @@ import Indicador from '../components/Indicador';
 import StockBadge from '../components/StockBadge';
 import { useCrud } from '../hooks/useCrud';
 import { movimientosService, productosService, proveedoresService } from '../services/inventario.service';
+import { useAuth } from '../context/AuthContext';
 import { estadoStock, formatearColones, formatearEntero, formatearFecha } from '../utils/formato';
 
+// Lo que usa el resumen cuando el usuario no tiene permiso sobre un recurso.
+const SIN_ACCESO = { listar: async () => [] };
+
 export default function ResumenPage() {
-  const productos = useCrud(productosService);
-  const movimientos = useCrud(movimientosService);
-  const proveedores = useCrud(proveedoresService);
+  const { puede } = useAuth();
+  const verProductos = puede('productos.ver');
+  const verMovimientos = puede('movimientos.ver');
+  const verProveedores = puede('proveedores.ver');
+  const productos = useCrud(verProductos ? productosService : SIN_ACCESO);
+  const movimientos = useCrud(verMovimientos ? movimientosService : SIN_ACCESO);
+  const proveedores = useCrud(verProveedores ? proveedoresService : SIN_ACCESO);
 
   const valorCosto = productos.items.reduce((t, p) => t + p.stockActual * p.precioCosto, 0);
   const valorVenta = productos.items.reduce((t, p) => t + p.stockActual * p.precioVenta, 0);
@@ -27,14 +35,19 @@ export default function ResumenPage() {
       {error && <div className="panel glass error-carga" role="alert">{error}</div>}
 
       <div className="indicadores">
-        <Indicador etiqueta="Valor a costo" valor={formatearColones(valorCosto)} />
-        <Indicador etiqueta="Valor a precio de venta" valor={formatearColones(valorVenta)} />
-        <Indicador etiqueta="Productos" valor={formatearEntero(productos.items.length)} />
-        <Indicador etiqueta="Proveedores activos" valor={proveedores.items.filter((p) => p.activo).length} />
-        <Indicador etiqueta="Por reponer o agotados" valor={porReponer.length} alerta={porReponer.length > 0} />
+        {verProductos && (
+          <>
+            <Indicador etiqueta="Valor a costo" valor={formatearColones(valorCosto)} />
+            <Indicador etiqueta="Valor a precio de venta" valor={formatearColones(valorVenta)} />
+            <Indicador etiqueta="Productos" valor={formatearEntero(productos.items.length)} />
+          </>
+        )}
+        {verProveedores && <Indicador etiqueta="Proveedores activos" valor={proveedores.items.filter((p) => p.activo).length} />}
+        {verProductos && <Indicador etiqueta="Por reponer o agotados" valor={porReponer.length} alerta={porReponer.length > 0} />}
       </div>
 
       <div className="dos-columnas">
+        {verProductos && (
         <section className="panel glass">
           <h2>Productos por reponer</h2>
           {porReponer.length === 0 ? (
@@ -64,7 +77,9 @@ export default function ResumenPage() {
             </div>
           )}
         </section>
+        )}
 
+        {verMovimientos && (
         <section className="panel glass">
           <h2>Últimos movimientos</h2>
           {ultimos.length === 0 ? (
@@ -96,6 +111,7 @@ export default function ResumenPage() {
             </div>
           )}
         </section>
+        )}
       </div>
     </>
   );

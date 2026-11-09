@@ -1,7 +1,10 @@
 'use strict';
 const nodemailer = require('nodemailer');
 
+const { ErrorHttp } = require('../utils/errorHttp');
+
 const REMITENTE_DEFAULT = 'bryangomezfwd@gmail.com';
+const EMAIL_PASS_DE_EJEMPLO = 'tu-contraseña'; // inicio del valor de .env.example
 
 /**
  * Obtiene la configuración del transporte de correo.
@@ -13,7 +16,7 @@ const obtenerConfiguracion = () => {
   const port = Number(process.env.EMAIL_PORT) || 465;
   const secure = port === 465;
 
-  return { usuario, pass, host, port, secure, configurado: Boolean(pass) };
+  return { usuario, pass, host, port, secure, configurado: Boolean(pass) && !pass.startsWith(EMAIL_PASS_DE_EJEMPLO) };
 };
 
 /**
@@ -38,8 +41,8 @@ const crearTransportador = () => {
 };
 
 /**
- * Envía un correo electrónico. Si no hay contraseña de aplicación configurada en .env,
- * realiza una simulación controlada y devuelve el resultado detallado para pruebas.
+ * Envía un correo electrónico. Solo devuelve un resultado si el servidor de correo lo aceptó:
+ * sin configuración lanza un 503 y si el envío falla, un 502.
  *
  * @param {Object} opciones
  * @param {string|string[]} opciones.destinatarios - Dirección o lista de direcciones destino
@@ -61,41 +64,24 @@ const enviarCorreo = async ({ destinatarios, asunto, html, texto }) => {
   };
 
   if (!config.configurado) {
-    console.log('\n================== [SIMULACIÓN ENVÍO DE CORREO] ==================');
-    console.log(`De: ${datosCorreo.from}`);
-    console.log(`Para: ${datosCorreo.to}`);
-    console.log(`Asunto: ${datosCorreo.subject}`);
-    console.log('Nota: Para envío real vía Gmail, configura EMAIL_PASS en backend/.env (Contraseña de aplicación)');
-    console.log('===================================================================\n');
-
-    return {
-      exito: true,
-      simulado: true,
-      remitente: config.usuario,
-      destinatarios: listaDestinatarios,
-      asunto,
-      fecha: new Date().toISOString(),
-      mensaje: `Simulación exitosa: el correo para [${to}] fue preparado correctamente. Para enviar a la bandeja real de Gmail, agrega tu contraseña de aplicación en EMAIL_PASS en el archivo .env.`,
-    };
+    console.error('Envío de correo no disponible: falta EMAIL_PASS en backend/.env (contraseña de aplicación de Gmail).');
+    throw new ErrorHttp(503, 'El envío de correos no está configurado en el servidor.');
   }
 
   try {
-    const transportador = crearTransportador();
-    const info = await transportador.sendMail(datosCorreo);
-
+    const info = await crearTransportador().sendMail(datosCorreo);
     return {
-      exito: true,
-      simulado: false,
       remitente: config.usuario,
-      destinatarios: listaDestinatarios,
+      destinatarios: info.accepted,
+      rechazados: info.rejected,
       asunto,
       messageId: info.messageId,
       fecha: new Date().toISOString(),
-      mensaje: `Correo enviado exitosamente a ${to}`,
+      mensaje: `Correo aceptado por el servidor para ${info.accepted.join(', ')}`,
     };
   } catch (error) {
     console.error('Error al enviar correo vía SMTP:', error);
-    throw new Error(`Fallo al enviar correo desde ${config.usuario}: ${error.message}`);
+    throw new ErrorHttp(502, 'El servidor de correo no aceptó el envío.');
   }
 };
 

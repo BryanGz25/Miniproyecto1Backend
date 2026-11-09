@@ -65,8 +65,10 @@ npm run dev                 # levanta backend y frontend juntos
 
 Abre http://localhost:5173 y crea una cuenta, o entra con el **usuario demo** del seeder:
 
-- Correo: `demo@inventario.test`
+- Correo: `demo@inventario.test` (perfil Administrador)
 - Contraseña: `Demo12345`
+
+El seeder crea una cuenta por perfil con esa misma contraseña: `supervisor@`, `bodeguero@`, `vendedor@` y `consulta@inventario.test`.
 
 Si ves "No se pudo conectar con el servidor", el backend no está corriendo: revisa en la terminal las líneas `[api]`.
 
@@ -102,11 +104,52 @@ En desarrollo, Vite redirige `/api` al backend, así que no hay que configurar C
 |---|---|---|---|
 | POST | `/api/auth/register` | Público | 201 usuario (sin password) · 400 datos inválidos o correo duplicado |
 | POST | `/api/auth/login` | Público | 200 `{ token, usuario }` · 401 credenciales inválidas |
-| GET | `/api/auth/me` | Bearer | 200 usuario logueado · 401 |
+| GET | `/api/auth/me` | Bearer | 200 usuario logueado, con perfil y permisos · 401 |
 
 - Las contraseñas se guardan con **bcrypt** (costo 12) y deben tener entre 8 y 72 caracteres.
 - El token es un **JWT HS256** que dura 8 h. Todas las demás rutas exigen `Authorization: Bearer <token>`; sin él responden `401 { "error": "No autorizado" }`.
 - En React, `AuthContext` guarda el token en `localStorage`, `RutaProtegida` redirige a `/login` sin sesión y `services/api.js` agrega el token a cada petición. Ante un 401, cierra la sesión automáticamente.
+
+## Perfiles y permisos
+
+| Perfil | Qué puede hacer |
+|---|---|
+| Administrador | Todo. Es el único que administra usuarios y sus permisos |
+| Supervisor | Ver, crear y editar toda la operación; no elimina |
+| Bodeguero | Ver inventario, bodegas y compras; crear y editar productos, lotes, ubicaciones y movimientos |
+| Vendedor | Clientes y ventas (ver, crear, editar); consulta el catálogo |
+| Consulta | Solo lectura de inventario y bodegas. Es el perfil de quien se registra por su cuenta |
+
+Cada permiso es `<recurso>.<acción>` (por ejemplo `productos.crear`). Los CRUD deducen la acción del método HTTP: GET `ver`, POST `crear`, PUT `editar`, DELETE `eliminar`. Sin el permiso, la API responde el mismo `404` de una ruta inexistente, de modo que el endpoint queda oculto para ese usuario.
+
+Permisos efectivos = los del perfil + las excepciones del usuario. Se leen de la base de datos en cada petición, así que un cambio aplica de inmediato, sin volver a iniciar sesión. En React, el Administrador los gestiona en **Personal > Permisos**.
+
+| Método | Ruta (solo Administrador) | Uso |
+|---|---|---|
+| GET | `/api/perfiles` | Lista de perfiles |
+| GET | `/api/usuarios/:id/permisos` | Catálogo con el estado de cada permiso para ese usuario |
+| PUT | `/api/usuarios/:id/permisos/:codigo` | Cuerpo `{ "habilitado": true }` o `false` |
+| DELETE | `/api/usuarios/:id/permisos` | Quita las excepciones y vuelve a lo que indica el perfil |
+| PUT | `/api/usuarios/:id` | Con `perfilId` cambia el perfil y descarta sus excepciones |
+
+Un administrador no puede cambiar sus propios permisos o perfil, ni quitar permisos a otro administrador (`409`).
+
+## Códigos de estado
+
+| Código | Cuándo se responde |
+|---|---|
+| 200 / 201 | La operación ocurrió de verdad: consulta, cambio, registro creado (201) o correo aceptado por el servidor SMTP |
+| 304 | GET con `If-None-Match` cuyo ETag sigue vigente: los datos no cambiaron |
+| 400 | Datos inválidos, JSON mal formado, URL inválida o valor fuera de rango |
+| 401 | Sin token, token inválido o vencido, o credenciales incorrectas |
+| 404 | El registro o la ruta no existen, o el usuario no tiene permiso (el endpoint queda oculto) |
+| 409 | Duplicado, registro con dependencias u operación en conflicto |
+| 413 | El cuerpo supera 100 kB |
+| 500 | Fallo interno real, por ejemplo la base de datos caída |
+| 502 | El servidor de correo no aceptó el envío |
+| 503 | El envío de correos no está configurado (falta `EMAIL_PASS`); no se simula |
+
+La API no usa redirecciones (301/302), porque ningún recurso cambió de dirección.
 
 ## API REST (requiere token)
 

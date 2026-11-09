@@ -26,6 +26,7 @@ export default function ProveedoresPage() {
       titulo="Proveedores"
       subtitulo={`${crud.items.length} proveedores, ${activos} activos`}
       entidad={{ singular: 'proveedor', articulo: 'el' }}
+      recurso="proveedores"
       crud={crud}
       columnas={COLUMNAS}
       camposBusqueda={BUSQUEDA}

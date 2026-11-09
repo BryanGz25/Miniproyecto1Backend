@@ -1,8 +1,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { ErrorHttp } = require('../utils/errorHttp');
 
 const RUTA_ARCHIVO = path.join(__dirname, '..', 'data', 'destinatariosAlerta.json');
+
+const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const esCorreoValido = (correo) => typeof correo === 'string' && FORMATO_CORREO.test(correo.trim());
 
 const leerDestinatarios = () => {
   try {
@@ -23,14 +27,7 @@ const leerDestinatarios = () => {
     return JSON.parse(contenido);
   } catch (error) {
     console.error('Error al leer destinatarios:', error.message);
-    return [
-      {
-        correo: 'bryangomezfwd@gmail.com',
-        etiqueta: 'Correo Principal',
-        activo: true,
-        fechaAgregado: new Date().toISOString(),
-      },
-    ];
+    throw new ErrorHttp(500, 'No se pudo leer la lista de destinatarios.');
   }
 };
 
@@ -40,16 +37,15 @@ const guardarDestinatarios = (lista) => {
 };
 
 const agregarDestinatario = (correo, etiqueta = 'Prueba') => {
-  const normalizado = String(correo).trim().toLowerCase();
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!regex.test(normalizado)) {
-    throw new Error('El formato del correo electrónico no es válido.');
+  if (!esCorreoValido(correo)) {
+    throw new ErrorHttp(400, 'El formato del correo electrónico no es válido.');
   }
+  const normalizado = correo.trim().toLowerCase();
 
   const lista = leerDestinatarios();
   const existe = lista.find((d) => d.correo.toLowerCase() === normalizado);
   if (existe) {
-    throw new Error(`El correo ${normalizado} ya se encuentra registrado en la lista de pruebas.`);
+    throw new ErrorHttp(409, `El correo ${normalizado} ya se encuentra registrado en la lista de pruebas.`);
   }
 
   const nuevo = {
@@ -70,7 +66,7 @@ const eliminarDestinatario = (correo) => {
   const filtrada = lista.filter((d) => d.correo.toLowerCase() !== normalizado);
 
   if (filtrada.length === lista.length) {
-    throw new Error(`No se encontró el correo ${normalizado} en la lista.`);
+    throw new ErrorHttp(404, `No se encontró el correo ${normalizado} en la lista.`);
   }
 
   guardarDestinatarios(filtrada);
@@ -81,5 +77,6 @@ module.exports = {
   leerDestinatarios,
   agregarDestinatario,
   eliminarDestinatario,
+  esCorreoValido,
 };
 

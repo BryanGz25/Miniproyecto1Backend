@@ -13,9 +13,9 @@ export function useOpciones(recursos) {
   useEffect(() => {
     if (!clave) return undefined;
     let vigente = true;
-    Promise.all(clave.split(',').map((r) => request(`/${r}`).then((lista) => [r, lista])))
-      .then((pares) => vigente && setOpciones(Object.fromEntries(pares)))
-      .catch(() => {}); // si falla, la tabla principal ya muestra el error
+    // Cada lista falla por separado: sin permiso sobre un recurso, las demás opciones se cargan igual.
+    Promise.all(clave.split(',').map((r) => request(`/${r}`).then((lista) => [r, lista], () => [r, []])))
+      .then((pares) => vigente && setOpciones(Object.fromEntries(pares)));
     return () => {
       vigente = false;
     };

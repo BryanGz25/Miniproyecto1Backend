@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { configurarNoAutorizado, tokenStorage } from '../services/api';
+import { configurarNoAutorizado, configurarProhibido, tokenStorage } from '../services/api';
 import { authService, expiracionDeToken } from '../services/auth.service';
 
 const AuthContext = createContext(null);
@@ -33,16 +33,23 @@ export function AuthProvider({ children }) {
     configurarNoAutorizado(() => logout('Tu sesión expiró. Inicia sesión de nuevo.'));
   }, [logout]);
 
+  const refrescarUsuario = useCallback(() => authService.me().then(setUsuario).catch(() => {}), []);
+
+  // Si el administrador retiró un permiso, la siguiente petición rechazada actualiza el menú y las pantallas.
+  useEffect(() => {
+    configurarProhibido(refrescarUsuario);
+  }, [refrescarUsuario]);
+
   // Con un token guardado, se pide el usuario a /auth/me (si el token ya no sirve, el 401 cierra sesión).
   useEffect(() => {
     if (!token) return undefined;
-    authService.me().then(setUsuario).catch(() => {});
+    refrescarUsuario();
 
     // Cierra la sesión justo cuando vence el token.
     const restante = expiracionDeToken(token) - Date.now();
     const timer = setTimeout(() => logout('Tu sesión expiró. Inicia sesión de nuevo.'), Math.max(restante, 0));
     return () => clearTimeout(timer);
-  }, [token, logout]);
+  }, [token, logout, refrescarUsuario]);
 
   const login = useCallback(async (correo, password) => {
     const respuesta = await authService.login(correo, password);
@@ -61,9 +68,15 @@ export function AuthProvider({ children }) {
     [login],
   );
 
+  // Solo decide qué se muestra; quien realmente autoriza es el backend.
+  const puede = useCallback(
+    (codigo) => Boolean(usuario && (usuario.esAdministrador || usuario.permisos.includes(codigo))),
+    [usuario],
+  );
+
   const valor = useMemo(
-    () => ({ token, usuario, autenticado: Boolean(token), aviso, login, registrar, logout }),
-    [token, usuario, aviso, login, registrar, logout],
+    () => ({ token, usuario, autenticado: Boolean(token), aviso, login, registrar, logout, puede }),
+    [token, usuario, aviso, login, registrar, logout, puede],
   );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;

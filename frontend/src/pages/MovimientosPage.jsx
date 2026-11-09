@@ -61,6 +61,7 @@ export default function MovimientosPage() {
       titulo="Movimientos de stock"
       subtitulo="Cada entrada, salida o ajuste actualiza el stock del producto"
       entidad={{ singular: 'movimiento', articulo: 'el' }}
+      recurso="movimientos"
       crud={crud}
       columnas={COLUMNAS}
       camposBusqueda={BUSQUEDA}

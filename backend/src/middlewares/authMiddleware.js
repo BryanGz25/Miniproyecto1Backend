@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { Usuario } = require('../models');
 const jwtConfig = require('../config/jwt');
+const { INCLUDE_ACCESO, accesoDe } = require('../services/acceso.service');
 
 const NO_AUTORIZADO = { error: 'No autorizado' };
 
 /**
- * Exige `Authorization: Bearer <token>` válido. Si todo está bien deja el usuario en req.usuario.
+ * Exige `Authorization: Bearer <token>` válido. Si todo está bien deja req.usuario y req.acceso.
  * Cualquier fallo (sin token, firma inválida, vencido, usuario borrado) responde 401 genérico.
  */
 const authMiddleware = async (req, res, next) => {
@@ -23,10 +24,12 @@ const authMiddleware = async (req, res, next) => {
     return res.status(401).json(NO_AUTORIZADO);
   }
 
-  const usuario = await Usuario.findByPk(Number(payload.sub));
+  // Los permisos se leen de la BD en cada petición: un cambio del administrador aplica al instante.
+  const usuario = await Usuario.findByPk(Number(payload.sub), { include: INCLUDE_ACCESO });
   if (!usuario) return res.status(401).json(NO_AUTORIZADO);
 
   req.usuario = usuario;
+  req.acceso = accesoDe(usuario);
   return next();
 };
 

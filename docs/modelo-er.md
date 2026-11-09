@@ -151,6 +151,31 @@ erDiagram
 | 19 | Departamentos | Personal | `/api/departamentos` | Empleados |
 | 20 | Empleados | Personal | `/api/empleados` | Departamento, usuario |
 
+## Seguridad: perfiles y permisos
+
+Cuatro tablas adicionales sostienen la autorización. No tienen timestamps ni CRUD propio; el Administrador las gestiona desde `/api/perfiles` y `/api/usuarios/:id/permisos`.
+
+```mermaid
+erDiagram
+    PERFILES ||--o{ USUARIOS : "asigna"
+    PERFILES ||--o{ PERFIL_PERMISOS : "incluye"
+    PERMISOS ||--o{ PERFIL_PERMISOS : "pertenece a"
+    USUARIOS ||--o{ USUARIO_PERMISOS : "tiene excepciones"
+    PERMISOS ||--o{ USUARIO_PERMISOS : "se ajusta en"
+
+    PERFILES { INT id PK
+        VARCHAR nombre UK }
+    PERMISOS { INT id PK
+        VARCHAR codigo UK }
+    PERFIL_PERMISOS { INT perfilId PK
+        INT permisoId PK }
+    USUARIO_PERMISOS { INT usuarioId PK
+        INT permisoId PK
+        BOOLEAN habilitado }
+```
+
+Borrar un usuario borra sus excepciones (`CASCADE`). Un perfil con usuarios no se puede borrar (`RESTRICT`).
+
 ## Reglas al eliminar
 
 | Si se borra… | Y tiene… | Resultado |

@@ -3,9 +3,11 @@ import Icono from './Icono';
 /**
  * Tabla genérica.
  * columnas: [{ clave, titulo, render?: (item) => node, clase?: string }]
+ * onEditar y onEliminar son opcionales: sin ellos no se muestra ese botón.
  */
 export default function DataTable({ columnas, filas, cargando, error, vacio, onEditar, onEliminar }) {
-  const totalColumnas = columnas.length + 1;
+  const conAcciones = Boolean(onEditar || onEliminar);
+  const totalColumnas = columnas.length + (conAcciones ? 1 : 0);
 
   const estado = (contenido, clase = 'estado-tabla') => (
     <tr>
@@ -25,9 +27,11 @@ export default function DataTable({ columnas, filas, cargando, error, vacio, onE
                 {c.titulo}
               </th>
             ))}
-            <th className="acciones">
-              <span className="sr-only">Acciones</span>
-            </th>
+            {conAcciones && (
+              <th className="acciones">
+                <span className="sr-only">Acciones</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -43,14 +47,20 @@ export default function DataTable({ columnas, filas, cargando, error, vacio, onE
                     {c.render ? c.render(fila) : fila[c.clave] ?? '—'}
                   </td>
                 ))}
-                <td className="acciones">
-                  <button type="button" className="btn btn-icono" onClick={() => onEditar(fila)} aria-label="Editar">
-                    <Icono nombre="editar" />
-                  </button>
-                  <button type="button" className="btn btn-icono" onClick={() => onEliminar(fila)} aria-label="Eliminar">
-                    <Icono nombre="basura" />
-                  </button>
-                </td>
+                {conAcciones && (
+                  <td className="acciones">
+                    {onEditar && (
+                      <button type="button" className="btn btn-icono" onClick={() => onEditar(fila)} aria-label="Editar">
+                        <Icono nombre="editar" />
+                      </button>
+                    )}
+                    {onEliminar && (
+                      <button type="button" className="btn btn-icono" onClick={() => onEliminar(fila)} aria-label="Eliminar">
+                        <Icono nombre="basura" />
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
         </tbody>

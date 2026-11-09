@@ -20,6 +20,7 @@ export default function CategoriasPage() {
       titulo="Categorías"
       subtitulo={`${crud.items.length} categorías para clasificar productos`}
       entidad={{ singular: 'categoría', articulo: 'la' }}
+      recurso="categorias"
       crud={crud}
       columnas={COLUMNAS}
       camposBusqueda={BUSQUEDA}

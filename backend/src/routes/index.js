@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { permisoDeRecurso } = require('../middlewares/permisos');
 
 const router = Router();
 
@@ -10,35 +11,39 @@ router.use('/auth', require('./authRoutes'));
 // ---------- Protegidas: todo lo que sigue exige Authorization: Bearer <token> ----------
 router.use(authMiddleware);
 
-// Personal
+// CRUD protegido por permisos "<recurso>.<ver|crear|editar|eliminar>".
+const crud = (recurso, rutas) => router.use(`/${recurso}`, permisoDeRecurso(recurso), rutas);
+
+// Personal (usuarios y perfiles definen sus reglas en su propio archivo)
 router.use('/usuarios', require('./usuarios.routes'));
-router.use('/departamentos', require('./departamentos.routes'));
-router.use('/empleados', require('./empleados.routes'));
+router.use('/perfiles', require('./perfiles.routes'));
+crud('departamentos', require('./departamentos.routes'));
+crud('empleados', require('./empleados.routes'));
 
 // Inventario
-router.use('/categorias', require('./categorias.routes'));
-router.use('/productos', require('./productos.routes'));
-router.use('/movimientos', require('./movimientos.routes'));
-router.use('/marcas', require('./marcas.routes'));
-router.use('/unidades-medida', require('./unidadesMedida.routes'));
-router.use('/impuestos', require('./impuestos.routes'));
-router.use('/lotes', require('./lotes.routes'));
+crud('categorias', require('./categorias.routes'));
+crud('productos', require('./productos.routes'));
+crud('movimientos', require('./movimientos.routes'));
+crud('marcas', require('./marcas.routes'));
+crud('unidades-medida', require('./unidadesMedida.routes'));
+crud('impuestos', require('./impuestos.routes'));
+crud('lotes', require('./lotes.routes'));
 
 // Bodegas
-router.use('/bodegas', require('./bodegas.routes'));
-router.use('/ubicaciones', require('./ubicaciones.routes'));
+crud('bodegas', require('./bodegas.routes'));
+crud('ubicaciones', require('./ubicaciones.routes'));
 
 // Compras
-router.use('/proveedores', require('./proveedores.routes'));
-router.use('/contactos-proveedor', require('./contactosProveedor.routes'));
-router.use('/ordenes-compra', require('./ordenesCompra.routes'));
-router.use('/detalles-orden-compra', require('./detallesOrdenCompra.routes'));
+crud('proveedores', require('./proveedores.routes'));
+crud('contactos-proveedor', require('./contactosProveedor.routes'));
+crud('ordenes-compra', require('./ordenesCompra.routes'));
+crud('detalles-orden-compra', require('./detallesOrdenCompra.routes'));
 
 // Ventas
-router.use('/clientes', require('./clientes.routes'));
-router.use('/metodos-pago', require('./metodosPago.routes'));
-router.use('/ventas', require('./ventas.routes'));
-router.use('/detalles-venta', require('./detallesVenta.routes'));
+crud('clientes', require('./clientes.routes'));
+crud('metodos-pago', require('./metodosPago.routes'));
+crud('ventas', require('./ventas.routes'));
+crud('detalles-venta', require('./detallesVenta.routes'));
 
 // Agentes Inteligentes (Alertas de Inventario por correo y Chatbot Integral)
 router.use('/agentes', require('./agentes.routes'));

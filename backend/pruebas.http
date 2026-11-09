@@ -41,6 +41,27 @@ Authorization: Bearer {{token}}
 ### Sin token -> 401 { "error": "No autorizado" }
 GET {{base}}/productos
 
+### ───────── Perfiles y permisos (solo Administrador) ─────────
+
+### Listar perfiles -> 200
+GET {{base}}/perfiles
+Authorization: Bearer {{token}}
+
+### Permisos de un usuario -> 200 (cambia el 2 por un id real)
+GET {{base}}/usuarios/2/permisos
+Authorization: Bearer {{token}}
+
+### Habilitar o deshabilitar un permiso -> 200
+PUT {{base}}/usuarios/2/permisos/productos.crear
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "habilitado": true }
+
+### Volver a los permisos del perfil -> 200
+DELETE {{base}}/usuarios/2/permisos
+Authorization: Bearer {{token}}
+
 ### ───────── Categorías ─────────
 
 ### Crear categoría -> 201

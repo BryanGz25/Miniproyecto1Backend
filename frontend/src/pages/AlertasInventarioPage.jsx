@@ -4,9 +4,13 @@ import StockBadge from '../components/StockBadge';
 import Icono from '../components/Icono';
 import { useAvisos } from '../components/Avisos';
 import { agentesService } from '../services/agentes.service';
+import { useAuth } from '../context/AuthContext';
 
 export default function AlertasInventarioPage() {
   const avisar = useAvisos();
+  const { puede } = useAuth();
+  const puedeEnviar = puede('alertas.enviar');
+  const puedeGestionar = puede('alertas.gestionar');
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [datos, setDatos] = useState(null);
@@ -66,15 +70,21 @@ export default function AlertasInventarioPage() {
       setPreviewHtml(res.htmlPrevisualizacion);
       
       const destinoTexto = correoEspecifico ? `a ${correoEspecifico}` : `a ${res.destinatarios.length} destinatario(s)`;
-      if (res.simulado) {
-        avisar(`✅ [Simulación Exitosa] Reporte generado y preparado ${destinoTexto}. Revisa la vista previa o consola.`, 'ok');
-      } else {
-        avisar(`🚀 ¡Correo enviado exitosamente ${destinoTexto}!`, 'ok');
-      }
+      avisar(`🚀 ¡Correo enviado exitosamente ${destinoTexto}!`, 'ok');
     } catch (error) {
       avisar(`Error al enviar alerta: ${error.message}`, 'error');
     } finally {
       setEnviando(false);
+    }
+  };
+
+  const handleVerDiseno = async () => {
+    try {
+      const { html } = await agentesService.obtenerVistaPrevia();
+      setPreviewHtml(html);
+      setMostrarModalPreview(true);
+    } catch (error) {
+      avisar(`Error al generar la vista previa: ${error.message}`, 'error');
     }
   };
 
@@ -89,7 +99,7 @@ export default function AlertasInventarioPage() {
           <h1>Agente Centinela de Inventario</h1>
           <p>Supervisión automática de stock y notificaciones por correo electrónico</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        {puedeEnviar && <div style={{ display: 'flex', gap: '10px' }}>
           <button
             type="button"
             className="btn btn-primario"
@@ -100,7 +110,7 @@ export default function AlertasInventarioPage() {
             <Icono nombre="enviar" tamano={16} />
             {enviando ? 'Enviando alerta...' : 'Enviar Alerta a Todos'}
           </button>
-        </div>
+        </div>}
       </header>
 
       {/* Banner de Remitente Oficial */}
@@ -126,19 +136,9 @@ export default function AlertasInventarioPage() {
             background: remitenteConfigurado ? '#dcfce7' : '#fef3c7',
             color: remitenteConfigurado ? '#166534' : '#92400e',
           }}>
-            {remitenteConfigurado ? 'SMTP Gmail Conectado' : 'Modo Seguro / Prueba Activo'}
+            {remitenteConfigurado ? 'SMTP Gmail Configurado' : 'Envío de correos sin configurar'}
           </span>
-          <button
-            type="button"
-            className="btn btn-secundario"
-            onClick={() => {
-              if (previewHtml) {
-                setMostrarModalPreview(true);
-              } else {
-                handleEnviarAlerta().then(() => setMostrarModalPreview(true));
-              }
-            }}
-          >
+          <button type="button" className="btn btn-secundario" onClick={handleVerDiseno}>
             Ver Diseño del Correo
           </button>
         </div>
@@ -173,6 +173,7 @@ export default function AlertasInventarioPage() {
             <h2 style={{ margin: 0, fontSize: '18px' }}>Formulario de Correos de Prueba</h2>
             <Icono nombre="campana" tamano={20} />
           </div>
+          {puedeGestionar && <>
           <p style={{ fontSize: '14px', color: 'var(--color-texto-secundario, #64748b)', marginTop: 0 }}>
             Agrega direcciones de correo adicionales para enviar y probar la recepción de alertas de reposición.
           </p>
@@ -227,6 +228,7 @@ export default function AlertasInventarioPage() {
               Agregar a la Lista de Alertas
             </button>
           </form>
+          </>}
 
           {/* Lista de Destinatarios */}
           <div style={{ marginTop: '24px' }}>
@@ -256,7 +258,7 @@ export default function AlertasInventarioPage() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
+                      {puedeEnviar && <button
                         type="button"
                         className="btn-icono"
                         title={`Enviar prueba directa a ${d.correo}`}
@@ -265,9 +267,9 @@ export default function AlertasInventarioPage() {
                         style={{ padding: '6px' }}
                       >
                         <Icono nombre="enviar" tamano={15} />
-                      </button>
+                      </button>}
 
-                      {d.correo !== remitente && (
+                      {puedeGestionar && d.correo !== remitente && (
                         <button
                           type="button"
                           className="btn-icono btn-icono-peligro"
@@ -343,7 +345,7 @@ export default function AlertasInventarioPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0 }}>Previsualización del Correo Enviado</h3>
+              <h3 style={{ margin: 0 }}>Previsualización del Correo</h3>
               <button
                 type="button"
                 className="btn-icono"

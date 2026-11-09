@@ -6,6 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // 1:N  Un usuario registra muchos movimientos de stock (auditoría)
       Usuario.hasMany(models.MovimientoStock, { foreignKey: 'usuarioId', as: 'movimientos' });
+      Usuario.belongsTo(models.Perfil, { foreignKey: 'perfilId', as: 'perfil' });
+      Usuario.hasMany(models.UsuarioPermiso, { foreignKey: 'usuarioId', as: 'permisosPersonalizados' });
     }
 
     // El hash nunca sale en las respuestas JSON, aunque se haya cargado.
@@ -20,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
       nombre: { type: DataTypes.STRING(100), allowNull: false },
       correo: { type: DataTypes.STRING(120), allowNull: false, unique: true, validate: { isEmail: true } },
       password: { type: DataTypes.STRING(60), allowNull: false }, // hash bcrypt (60 caracteres)
+      perfilId: { type: DataTypes.INTEGER, allowNull: false },
     },
     {
       sequelize,

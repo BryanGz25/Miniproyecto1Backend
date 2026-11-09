@@ -4,6 +4,7 @@ import DataTable from './DataTable';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import { useAvisos } from './Avisos';
+import { useAuth } from '../context/AuthContext';
 import { normalizar } from '../utils/formato';
 
 /**
@@ -14,6 +15,7 @@ export default function CrudPage({
   titulo,
   subtitulo,
   entidad, // { singular: 'producto', articulo: 'el' }
+  recurso, // ruta de la API: decide qué botones ve el usuario
   crud,
   columnas,
   camposBusqueda,
@@ -25,6 +27,8 @@ export default function CrudPage({
   antesDeTabla,
 }) {
   const avisar = useAvisos();
+  const { puede } = useAuth();
+  const puedeCrear = puede(`${recurso}.crear`);
   const [busqueda, setBusqueda] = useState('');
   const [editando, setEditando] = useState(null); // null = cerrado, {} = nuevo, item = editar
   const [eliminando, setEliminando] = useState(null);
@@ -62,10 +66,12 @@ export default function CrudPage({
           <h1>{titulo}</h1>
           <p>{subtitulo}</p>
         </div>
-        <button type="button" className="btn btn-primario" onClick={() => setEditando({})}>
-          <Icono nombre="mas" tamano={16} />
-          {tituloNuevo}
-        </button>
+        {puedeCrear && (
+          <button type="button" className="btn btn-primario" onClick={() => setEditando({})}>
+            <Icono nombre="mas" tamano={16} />
+            {tituloNuevo}
+          </button>
+        )}
       </header>
 
       {antesDeTabla}
@@ -93,9 +99,13 @@ export default function CrudPage({
           filas={filas}
           cargando={crud.cargando}
           error={crud.error}
-          vacio={busqueda ? 'No hay resultados para tu búsqueda.' : `Aún no hay registros. Crea ${entidad.articulo} primer${o === 'a' ? 'a' : 'o'}.`}
-          onEditar={setEditando}
-          onEliminar={setEliminando}
+          vacio={
+            busqueda
+              ? 'No hay resultados para tu búsqueda.'
+              : `Aún no hay registros.${puedeCrear ? ` Crea ${entidad.articulo} primer${o === 'a' ? 'a' : 'o'}.` : ''}`
+          }
+          onEditar={puede(`${recurso}.editar`) ? setEditando : undefined}
+          onEliminar={puede(`${recurso}.eliminar`) ? setEliminando : undefined}
         />
       </section>
 

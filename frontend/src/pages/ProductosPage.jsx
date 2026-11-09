@@ -39,6 +39,7 @@ export default function ProductosPage() {
       titulo="Productos"
       subtitulo={`${crud.items.length} productos en ${categorias.items.length} categorías`}
       entidad={{ singular: 'producto', articulo: 'el' }}
+      recurso="productos"
       crud={crud}
       columnas={COLUMNAS}
       camposBusqueda={BUSQUEDA}

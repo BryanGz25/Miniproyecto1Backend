@@ -4,6 +4,9 @@ export const agentesService = {
   /** Obtiene estado actual de productos críticos, correos y configuración SMTP. */
   obtenerEstadoAlertas: () => request('/agentes/alertas/estado'),
 
+  /** Obtiene el HTML del reporte sin enviar ningún correo. */
+  obtenerVistaPrevia: () => request('/agentes/alertas/vista-previa'),
+
   /** Obtiene la lista de destinatarios de prueba para las alertas. */
   listarDestinatarios: () => request('/agentes/alertas/destinatarios'),
 

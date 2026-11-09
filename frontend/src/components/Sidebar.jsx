@@ -2,13 +2,14 @@ import { NavLink } from 'react-router-dom';
 import Icono from './Icono';
 import { useAuth } from '../context/AuthContext';
 
-// Menú agrupado por área. Cada enlace es un CRUD (salvo Resumen): 20 en total.
+// Menú agrupado por área: [ruta, título, icono, permiso]. Si no se indica, el permiso es "<ruta>.ver";
+// null significa que lo ve cualquier usuario con sesión.
 export const MENU = [
-  { grupo: null, enlaces: [['/resumen', 'Resumen', 'resumen']] },
+  { grupo: null, enlaces: [['/resumen', 'Resumen', 'resumen', null]] },
   {
     grupo: 'Agentes IA',
     enlaces: [
-      ['/alertas-inventario', 'Alertas de stock', 'campana'],
+      ['/alertas-inventario', 'Alertas de stock', 'campana', 'alertas.ver'],
     ],
   },
   {
@@ -54,12 +55,19 @@ export const MENU = [
       ['/departamentos', 'Departamentos', 'edificio'],
       ['/empleados', 'Empleados', 'persona'],
       ['/usuarios', 'Usuarios', 'usuarios'],
+      ['/permisos', 'Permisos', 'escudo', 'permisos.administrar'],
     ],
   },
 ];
 
+const permisoDe = ([ruta, , , permiso]) => (permiso === undefined ? `${ruta.slice(1)}.ver` : permiso);
+
 export default function Sidebar() {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, puede } = useAuth();
+  const menu = MENU.map(({ grupo, enlaces }) => ({
+    grupo,
+    enlaces: enlaces.filter((enlace) => permisoDe(enlace) === null || puede(permisoDe(enlace))),
+  })).filter(({ enlaces }) => enlaces.length > 0);
 
   return (
     <aside className="sidebar glass">
@@ -68,7 +76,7 @@ export default function Sidebar() {
         Inventario
       </div>
       <nav className="nav" aria-label="Secciones">
-        {MENU.map(({ grupo, enlaces }) => (
+        {menu.map(({ grupo, enlaces }) => (
           <div key={grupo ?? 'general'} className="nav-grupo">
             {grupo && <p className="nav-titulo">{grupo}</p>}
             {enlaces.map(([ruta, titulo, icono]) => (
@@ -88,6 +96,7 @@ export default function Sidebar() {
           <div>
             <p className="sesion-nombre">{usuario?.nombre ?? 'Cargando…'}</p>
             <p className="sesion-correo">{usuario?.correo}</p>
+            <p className="sesion-correo">{usuario?.perfil?.nombre}</p>
           </div>
         </div>
         <button type="button" className="btn sesion-salir" onClick={() => logout('Cerraste sesión.')}>

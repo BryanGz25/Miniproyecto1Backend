@@ -13,3 +13,4 @@ module.exports = crearControladorCrud({
     abreviatura: { tipo: 'texto', requerido: true, max: 10 },
   },
 });
+ 

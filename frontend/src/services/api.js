@@ -43,6 +43,14 @@ export const configurarNoAutorizado = (fn) => {
   alNoAutorizado = fn;
 };
 
+// La API oculta con este 404 lo que el usuario no puede usar (un registro inexistente trae otro mensaje).
+// Si ocurre, los permisos cambiaron o no alcanzan: AuthContext los vuelve a consultar.
+const RUTA_OCULTA = 'Ruta no encontrada';
+let alProhibido = () => {};
+export const configurarProhibido = (fn) => {
+  alProhibido = fn;
+};
+
 // En login/registro un 401 significa "credenciales inválidas", no "sesión vencida".
 const RUTAS_PUBLICAS = ['/auth/login', '/auth/register'];
 
@@ -72,6 +80,10 @@ export async function request(ruta, { method = 'GET', body } = {}) {
     if (respuesta.status === 401 && !RUTAS_PUBLICAS.includes(ruta)) {
       alNoAutorizado(); // autologout
       throw new ApiError(401, 'Tu sesión expiró o no es válida. Inicia sesión de nuevo.');
+    }
+    if (respuesta.status === 404 && datos?.error?.startsWith(RUTA_OCULTA)) {
+      alProhibido();
+      throw new ApiError(404, 'No tienes acceso a este recurso.');
     }
     // Sin JSON y con 5xx: lo respondió el proxy de Vite porque el backend no está corriendo.
     if (respuesta.status >= 500 && !datos) {
